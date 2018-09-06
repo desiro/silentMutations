@@ -3,7 +3,8 @@
 # author: Daniel Desiro'
 script_usage="""
 usage
-    silentMutations.py -f <in_fasta> -p <out_prefix> [options]
+    silentMutations.py -f <in_fasta> -p <out_prefix> -s1 
+    <name>:<frame>:<start>-<end> -s2 <name>:<frame>:<start>-<end> [options]
 
 version
     silentMutations.py 0.0.1 (alpha)
@@ -13,7 +14,7 @@ dependencies
 
 description
     Generates compensatory codon mutations with similar minimum free energy.
-    Example call: python silentMutations.py -p example -f example.fa -s1 
+    Example call: python3 silentMutations.py -p example -f example.fa -s1 
     seq1:2:20-36 -s2 seq2:0:23-44 -cls ssRNA- -r -c -thr=4
 
 --prefix,-p
@@ -89,7 +90,11 @@ import re
 import time
 from numpy import arange, mean, prod, array
 import itertools
-from RNA import fold_compound, cvar, CONSTRAINT_DB, CONSTRAINT_DB_DEFAULT
+try:
+    from RNA import fold_compound, cvar, CONSTRAINT_DB, CONSTRAINT_DB_DEFAULT
+except:
+    print("Error: The mandatory library ViennaRNA 2.4 is missing, please read the README.md for more information!")
+    exit()
 from subprocess import Popen, PIPE, call
 from multiprocessing import Pool, Process, Manager, Lock
 
