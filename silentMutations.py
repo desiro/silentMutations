@@ -37,8 +37,7 @@ description
     creates reverse of each strain if set (default: False)
 
 --virusclass,-cls
-    define virus class; (default: ssRNA+) (choices: dsDNA,ssDNA,dsRNA,ssRNA+,
-    ssRNA-,ssRNA-RT,dsDNA-RT)
+    define virus class; (default: ssRNA+) (choices: ssRNA+,ssRNA-)
 
 --filterperc,-prc
     define minimum percentage for the mutant-WT mfe to be below the WT-WT mfe
@@ -481,6 +480,8 @@ def doVARNA(var_p, RNA, constraint, var_var, title_name, hstring, astring, ystri
     if var_var:
         call(C_call, shell=False)
     with open(f"{var_p}.sh", "w") as cvar:
+        if not var_var:
+            C_call[2] = "VARNAv3-93.jar"
         cvar.write(" ".join(C_call))
     print(f"Status: VARNA call written to \"{var_p}.sh\"")
 
