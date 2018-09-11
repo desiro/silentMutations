@@ -125,8 +125,13 @@ def main(var_p  , var_f  , var_s1 , var_s2 , var_c  , var_r  , var_cls, var_prc,
     ## make codon permutations
     print(f"Status: Create permutations ...")
     perm_list, base_list = list(), list()
-    for snip,cdn in zip([snip1, snip2],[var_nc1, var_nc2]):
-        perm_strings = getPermutations(snip.snip, var_cls, var_mut, cdn)
+    slist = [snip1, snip2]
+    for sx,cdn in zip([0, 1],[var_nc1, var_nc2]):
+        snip = slist[sx]
+        if var_nc1 and var_nc2:
+            perm_strings = getNCPermutations(slist, sx, var_dng)
+        else:
+            perm_strings = getPermutations(snip.snip, var_cls, cdn)
         filtered_strings, mms_dict = getStats(snip.snip, perm_strings, var_mut)
         perm_list.append(filtered_strings)
         base_list.append(perm_strings)
@@ -251,7 +256,37 @@ def permutate(RNA, frame, c_dict, a_dict):
         codon_list.append(a_dict[aa])
     return codon_list
 
-def getPermutations(snip, var_cls, var_mut, cdn):
+def getNCPermutations(slist, sx, var_dng):
+    ## create non-coding permutations
+    RNA1, RNA2 = slist
+    mfe, pattern = doCofold(f"{RNA1.snip}&{RNA2.snip}",RNA1.lconst+RNA2.rconst, var_dng)
+    p_list = pattern.split("&")
+    p1 = [i for i,pat in enumerate(p_list[0]) if pat != "."]
+    p2 = [i for i,pat in enumerate(p_list[1]) if pat != "."]
+    p  = [i for i,pat in enumerate(p_list[sx]) if pat == "."]
+    p1d, p2d = dict(), dict()
+    for i,j in zip(p1,p2[::-1]):
+        p1d[i] = j
+        p2d[j] = i
+    pd_list = [p1d, p2d]
+    codon_list = list()
+    slnp = slist[sx].snip
+    sother = RNA2.snip if sx == 0 else RNA1.snip
+    for i in range(len(slnp)):
+        if i in p:
+            codon_list.append([slnp[i]])
+        else:
+            j = pd_list[sx][i]
+            codon_list.append([slnp[i],sother[j]])
+    print(codon_list)
+    perm_list = list(itertools.product(*codon_list))
+    perm_strings = list()
+    for i,ptoup in enumerate(perm_list):
+        #print(f"Status: Permutation: {i+1} of {nperm}      ", end="\r")
+        perm_strings.append("".join(list(ptoup)))
+    return perm_strings
+
+def getPermutations(snip, var_cls, cdn):
     ## create all possible permutation strings 
     co_dict, aa_dict, rc_dict, ra_dict = makeCodons()
     if var_cls == "ssRNA-":
@@ -265,7 +300,7 @@ def getPermutations(snip, var_cls, var_mut, cdn):
     else:
         codon_list = [["A","C","G","U"] for i in range(len(snip))]
     nperm = prod(array([len(sub) for sub in codon_list]))
-    print(codon_list)
+    #print(codon_list)
     perm_list = list(itertools.product(*codon_list))
     perm_strings = list()
     for i,ptoup in enumerate(perm_list):
