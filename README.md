@@ -25,6 +25,9 @@ cd ViennaRNA-2.4.9
 make
 sudo make install
 ```
+
+For Windows 10 users, please use the [Ubuntu](https://www.microsoft.com/en-us/p/ubuntu/9nblggh4msv6?cid=msft_web_chart) subsystem and follow the Linux installation steps. 
+
 ## Optional Prerequisites
 
 * [VARNA 3.93](http://varna.lri.fr/)
