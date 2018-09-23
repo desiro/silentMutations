@@ -59,6 +59,10 @@ python3 silentMutations.py -p example -f example.fa -s1 seq1:2:20-36 -s2 seq2:0:
 
 This project is licensed under the GNU General Public License v3.0 - see the [LICENSE.md](LICENSE.md) file for details.
 
+## Reference
+
+Please cite [SilentMutations](https://doi.org/10.1101/424002) if you find our tool useful.
+
 ## Workflow overview
 
 ![workflow](https://github.com/desiro/silentMutations/blob/master/workflow.png "(a) extract sequences and remove unpaired codons (b) create possible codon permutations (c) keep only mutants with a weak mutant-WT fold mfe (d) keep only double-mutants with similar double-WT fold mfe (e) minimize fold mfe of single-mutants")
