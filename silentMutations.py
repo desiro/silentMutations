@@ -13,9 +13,12 @@ dependencies
     numpy, ViennaRNA Package 2.4, VARNAv3-93.jar, inkscape
 
 description
-    Generates compensatory codon mutations with similar minimum free energy.
-    Example call: python3 silentMutations.py -p example -f example.fa -s1 
-    seq1:2:20-36 -s2 seq2:0:23-44 -cls ssRNA- -r -c -thr=4
+    Generates compensatory codon mutations with similar minimum free energy. It
+    is recommended to not extend the length for each sequence over 30 nt. This
+    could lead to extensive run times and each sequence would probably form
+    intra sequence interactions prior to their interaction with each other. This
+    is not covered with SIM. Example call: python3 silentMutations.py -p example
+    -f example.fa -s1 seq1:2:20-36 -s2 seq2:0:23-44 -cls ssRNA- -r -c -thr=4
 
 --prefix,-p
     output prefix for result files
@@ -121,6 +124,8 @@ def main(var_p  , var_f  , var_s1 , var_s2 , var_c  , var_r  , var_cls, var_prc,
         snip_list.append(createSnip(header, sequence, var_r, var_c))
     snip1, snip2 = snip_list
     getSnips(snip1, snip2, var_dng)
+    if len(snip1.snip) > 30 or len(snip2.snip) > 30:
+        print(f"Warning: One of your sequences is longer than 30 nts, consider stopping the run. -h will provide more information about this.")
     ############################################################################
     ## make codon permutations
     print(f"Status: Create permutations ...")
@@ -219,6 +224,7 @@ def getSnips(RNA1, RNA2, var_dng):
     pattern1, pattern2 = pattern.split("&")
     print(f"RNA: {RNA1.snip}&{RNA2.snip}")
     print(f"Pat: {pattern}")
+    print(f"mfe: {mfe:.2f} kcal/mol")
     #print(pattern1)
     while pattern1[:3] == "...":
         pattern1 = pattern1[3:]
@@ -341,9 +347,16 @@ def foldPermutations(perms1, perms2, base_mfe, constraint, var_udv, var_ldv, var
     fold_dict = dict()
     lower = var_ldv * base_mfe
     upper = var_udv * base_mfe
+    best = 0.0
     for iRNA,ires in perm_dict.items():
+        if ires[0] < best:
+            best = ires[0]
         if ires[0] >= upper and ires[0] <= lower:
             fold_dict[iRNA] = ires[0]
+    if len(fold_dict.keys()) == 0:
+        print("Error: No mutations found, try to adjust the parameters!")
+        print(f"Error: WT mfe is at {base_mfe:.2f} kcal/mol, while the best double-mutant was at {best:.2f} kcal/mol.")
+        sys.exit()
     return fold_dict
 
 def doMulti(ldict, constraint, name, var_thr, var_dng):
@@ -416,7 +429,8 @@ def makeCodons():
                "AUU":"I", "AUC":"I", "AUA":"I", "AUG":"M", "ACU":"T", "ACC":"T", "ACA":"T", "ACG":"T",
                "AAU":"N", "AAC":"N", "AAA":"K", "AAG":"K", "AGU":"S", "AGC":"S", "AGA":"R", "AGG":"R",
                "GUU":"V", "GUC":"V", "GUA":"V", "GUG":"V", "GCU":"A", "GCC":"A", "GCA":"A", "GCG":"A",
-               "GAU":"D", "GAC":"D", "GAA":"E", "GAG":"E", "GGU":"G", "GGC":"G", "GGA":"G", "GGG":"G"}
+               "GAU":"D", "GAC":"D", "GAA":"E", "GAG":"E", "GGU":"G", "GGC":"G", "GGA":"G", "GGG":"G",
+               "NNN":"X"}
     rc_dict = {} # reverse complement codons
     aa_dict = {} # amino acid dictionary
     ra_dict = {} # reverse complement aa dict
@@ -434,7 +448,7 @@ def revComp(RNA, var_c, var_r):
     ## complement dictionary, or transform DNA to RNA
     RNA = RNA.upper()
     D2Rc = {"A":"U","T":"A","U":"A","C":"G","G":"C","R":"Y","Y":"R","M":"K",\
-            "K":"M","S":"W","W":"S","B":"V","V":"B","D":"H","H":"D"}
+            "K":"M","S":"W","W":"S","B":"V","V":"B","D":"H","H":"D","N":"N"}
     if var_c:
         RNA = "".join(D2Rc[i] for i in RNA)
     else:
