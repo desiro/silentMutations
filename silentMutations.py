@@ -46,6 +46,11 @@ description
     define minimum percentage for the mutant-WT mfe to be below the WT-WT mfe
     (default: 0.5)
 
+--filterpercx,-prx
+    optionally define a maximum percentage for the mutant-WT mfe to be above the
+    WT-WT mfe; the only purpose of this parameter is to reduce the runtime; it
+    should be used with care (default: 0.0)
+
 --upperdev,-udv
     define upper similarity threshold for the mutant-mutant mfe in contrast to
     the WT-WT mfe (default: 1.05)
@@ -106,8 +111,8 @@ from multiprocessing import Pool, Process, Manager, Lock
 ################################################################################
 
 def main(var_p  , var_f  , var_s1 , var_s2 , var_c  , var_r  , var_cls, var_prc,
-         var_udv, var_ldv, var_mrg, var_nc1, var_nc2, var_mut, var_dng, var_thr,
-         var_var, var_ink):
+         var_prx, var_udv, var_ldv, var_mrg, var_nc1, var_nc2, var_mut, var_dng,
+         var_thr, var_var, var_ink):
     ############################################################################
     ## read fasta file
     # fastaTest = "/home/vo54saz/projects/dd_influenza_packaging/scripts/codon_mut_test.fa"
@@ -152,7 +157,7 @@ def main(var_p  , var_f  , var_s1 , var_s2 , var_c  , var_r  , var_cls, var_prc,
     base_mfe = round(base_mfe,2)
     filtered_list = list()
     for snp,perms in zip([snip2, snip1], perm_list):
-        filtered_list.append(filterPermutations(snp, perms, constraint, float(base_mfe), var_prc, var_thr, var_dng))
+        filtered_list.append(filterPermutations(snp, perms, constraint, float(base_mfe), var_prc, var_prx, var_thr, var_dng))
     if not filtered_list[0] or not filtered_list[1]:
         print("Error: Percentage for filtering too low!")
         sys.exit()
@@ -171,7 +176,7 @@ def main(var_p  , var_f  , var_s1 , var_s2 , var_c  , var_r  , var_cls, var_prc,
     ## save folds
     print(f"Status: Save folds ...")
     var_p = makeDir(var_p)
-    saveFolds(var_p, best, snip1, snip2, base_mfe, base_pattern, var_f, var_r, var_c, var_cls, var_prc, var_udv, var_ldv)
+    saveFolds(var_p, best, snip1, snip2, base_mfe, base_pattern, var_f, var_r, var_c, var_cls, var_prc, var_prx, var_udv, var_ldv, var_mrg)
     ############################################################################
     ## create varna plots
     print(f"Status: Create structures ...")
@@ -324,7 +329,7 @@ def getStats(snip, perm_strings, var_mut):
             filtered_strings.append(ps)
     return filtered_strings, mms_dict
 
-def filterPermutations(snp, perms, constraint, base_mfe, var_prc, var_thr, var_dng):
+def filterPermutations(snp, perms, constraint, base_mfe, var_prc, var_prx, var_thr, var_dng):
     ## filter permutations to be less than a percentage of the base mfe
     pdict = dict()
     filtered = list()
@@ -333,7 +338,7 @@ def filterPermutations(snp, perms, constraint, base_mfe, var_prc, var_thr, var_d
     fold_dict = doMulti(pdict, constraint, f"{snp.name} filter", var_thr, var_dng)
     for iRNA,ires in fold_dict.items():
         #print(ires[0])
-        if ires[0] >= base_mfe*var_prc:
+        if ires[0] >= base_mfe*var_prc and ires[0] <= base_mfe*var_prx:
             filtered.append(iRNA.split("&")[1])
     return filtered
 
@@ -577,7 +582,7 @@ def makeDir(var_p):
     os.mkdir(dir_name)
     return os.path.join(dir_name,var_p)
 
-def saveFolds(var_p, best, snip1, snip2, base_mfe, base_pattern, var_f, var_r, var_c, var_cls, var_prc, var_udv, var_ldv):
+def saveFolds(var_p, best, snip1, snip2, base_mfe, base_pattern, var_f, var_r, var_c, var_cls, var_prc, var_prx, var_udv, var_ldv, var_mrg):
     ## save folds to file
     if not best:
         print("Error: No mutations found, try to adjust the parameters!")
@@ -585,7 +590,7 @@ def saveFolds(var_p, best, snip1, snip2, base_mfe, base_pattern, var_f, var_r, v
     file_name = f"{var_p}.cmut"
     with open(file_name, "w") as outfile:
         co_dict, aa_dict, rc_dict, ra_dict = makeCodons()
-        outfile.write(f"Settings: -f {var_f} -r {var_r} -c {var_c} -cls {var_cls} -prc {var_prc} -udv {var_udv} -ldv {var_ldv}\n")
+        outfile.write(f"Settings: -f {var_f} -r {var_r} -c {var_c} -cls {var_cls} -prc {var_prc} -prx {var_prx} -udv {var_udv} -ldv {var_ldv} -mrg {var_mrg}\n")
         if var_cls == "ssRNA-": 
             outfile.write(f"Positive snip 1:   {snip1.name} {len(snip1.seq)-int(snip1.s_end)+1}-{len(snip1.seq)-int(snip1.s_start)+1} {revComp(snip1.snip,1,1)} {aaSequence(revComp(snip1.snip,1,1),0,co_dict)}\n")
             outfile.write(f"Positive snip 2:   {snip2.name} {len(snip2.seq)-int(snip2.s_end)+1}-{len(snip2.seq)-int(snip2.s_start)+1} {revComp(snip2.snip,1,1)} {aaSequence(revComp(snip2.snip,1,1),0,co_dict)}\n")
