@@ -46,7 +46,7 @@ description
     define minimum percentage for the mutant-WT mfe to be below the WT-WT mfe
     (default: 0.5)
 
---filterpercx,-prx
+--filterperx,-prx
     optionally define a maximum percentage for the mutant-WT mfe to be above the
     WT-WT mfe; the only purpose of this parameter is to reduce the runtime; it
     should be used with care (default: 0.0)
