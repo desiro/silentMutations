@@ -76,6 +76,9 @@ description
 --dangles,-dng
     use dangling ends for foldings (default: 0) (choices: 0,1,2,3)
 
+--noLP,-nlp
+    disable lonely pairs for RNAcofold (default: False)
+
 --threads,-thr
     number of threads to use for RNAcofold (default: 1)
 
@@ -112,7 +115,7 @@ from multiprocessing import Pool, Process, Manager, Lock
 
 def main(var_p  , var_f  , var_s1 , var_s2 , var_c  , var_r  , var_cls, var_prc,
          var_prx, var_udv, var_ldv, var_mrg, var_nc1, var_nc2, var_mut, var_dng,
-         var_thr, var_var, var_ink):
+         var_nlp, var_thr, var_var, var_ink):
     ############################################################################
     ## read fasta file
     # fastaTest = "/home/vo54saz/projects/dd_influenza_packaging/scripts/codon_mut_test.fa"
@@ -128,7 +131,7 @@ def main(var_p  , var_f  , var_s1 , var_s2 , var_c  , var_r  , var_cls, var_prc,
     for header,sequence in data_dict.items():
         snip_list.append(createSnip(header, sequence, var_r, var_c))
     snip1, snip2 = snip_list
-    getSnips(snip1, snip2, var_dng)
+    getSnips(snip1, snip2, var_dng, var_nlp)
     if len(snip1.snip) > 30 or len(snip2.snip) > 30:
         print(f"Warning: One of your sequences is longer than 30 nts, consider stopping the run. -h will provide more information about this.")
     ############################################################################
@@ -139,7 +142,7 @@ def main(var_p  , var_f  , var_s1 , var_s2 , var_c  , var_r  , var_cls, var_prc,
     for sx,cdn in zip([0, 1],[var_nc1, var_nc2]):
         snip = slist[sx]
         if var_nc1 and var_nc2:
-            perm_strings = getNCPermutations(slist, sx, var_dng)
+            perm_strings = getNCPermutations(slist, sx, var_dng, var_nlp)
         else:
             perm_strings = getPermutations(snip.snip, var_cls, cdn)
         filtered_strings, mms_dict = getStats(snip.snip, perm_strings, var_mut)
@@ -153,11 +156,11 @@ def main(var_p  , var_f  , var_s1 , var_s2 , var_c  , var_r  , var_cls, var_prc,
     ## filter permutations
     print(f"Status: Filter permutations ...")
     constraint = snip1.lconst+snip2.rconst
-    base_mfe, base_pattern = doCofold(f"{snip1.snip}&{snip2.snip}",constraint, var_dng)
+    base_mfe, base_pattern = doCofold(f"{snip1.snip}&{snip2.snip}",constraint, var_dng, var_nlp)
     base_mfe = round(base_mfe,2)
     filtered_list = list()
     for snp,perms in zip([snip2, snip1], perm_list):
-        filtered_list.append(filterPermutations(snp, perms, constraint, float(base_mfe), var_prc, var_prx, var_thr, var_dng))
+        filtered_list.append(filterPermutations(snp, perms, constraint, float(base_mfe), var_prc, var_prx, var_thr, var_dng, var_nlp))
     if not filtered_list[0] or not filtered_list[1]:
         print("Error: Percentage for filtering too low!")
         sys.exit()
@@ -166,12 +169,12 @@ def main(var_p  , var_f  , var_s1 , var_s2 , var_c  , var_r  , var_cls, var_prc,
     ############################################################################
     ## make cofolds of permutations
     print(f"Status: Fold permutations ...")
-    folds = foldPermutations(filtered_list[0], filtered_list[1], float(base_mfe), constraint, var_udv, var_ldv, var_thr, var_dng)
+    folds = foldPermutations(filtered_list[0], filtered_list[1], float(base_mfe), constraint, var_udv, var_ldv, var_thr, var_dng, var_nlp)
     print(f"Status: ... finished!                     ")
     ############################################################################
     ## get best mutation
     print(f"Status: Get best mutations ...")
-    best = getBest(folds, snip1, snip2, constraint, var_dng, var_mrg)
+    best = getBest(folds, snip1, snip2, constraint, var_dng, var_nlp, var_mrg)
     ############################################################################
     ## save folds
     print(f"Status: Save folds ...")
@@ -223,9 +226,9 @@ class RNAsnip(object):
         self.lconst = self.lconst[:-3]
         self.rconst = self.rconst[:-3]
 
-def getSnips(RNA1, RNA2, var_dng):
+def getSnips(RNA1, RNA2, var_dng, var_nlp):
     ## get minimum snip size for folding from 2 RNAsnip objects
-    mfe, pattern = doCofold(f"{RNA1.snip}&{RNA2.snip}",RNA1.lconst+RNA2.rconst, var_dng)
+    mfe, pattern = doCofold(f"{RNA1.snip}&{RNA2.snip}",RNA1.lconst+RNA2.rconst, var_dng, var_nlp)
     pattern1, pattern2 = pattern.split("&")
     print(f"RNA: {RNA1.snip}&{RNA2.snip}")
     print(f"Pat: {pattern}")
@@ -267,10 +270,10 @@ def permutate(RNA, frame, c_dict, a_dict):
         codon_list.append(a_dict[aa])
     return codon_list
 
-def getNCPermutations(slist, sx, var_dng):
+def getNCPermutations(slist, sx, var_dng, var_nlp):
     ## create non-coding permutations
     RNA1, RNA2 = slist
-    mfe, pattern = doCofold(f"{RNA1.snip}&{RNA2.snip}",RNA1.lconst+RNA2.rconst, var_dng)
+    mfe, pattern = doCofold(f"{RNA1.snip}&{RNA2.snip}",RNA1.lconst+RNA2.rconst, var_dng, var_nlp)
     p_list = pattern.split("&")
     p1 = [i for i,pat in enumerate(p_list[0]) if pat != "."]
     p2 = [i for i,pat in enumerate(p_list[1]) if pat != "."]
@@ -329,26 +332,26 @@ def getStats(snip, perm_strings, var_mut):
             filtered_strings.append(ps)
     return filtered_strings, mms_dict
 
-def filterPermutations(snp, perms, constraint, base_mfe, var_prc, var_prx, var_thr, var_dng):
+def filterPermutations(snp, perms, constraint, base_mfe, var_prc, var_prx, var_thr, var_dng, var_nlp):
     ## filter permutations to be less than a percentage of the base mfe
     pdict = dict()
     filtered = list()
     for perm in perms:
         pdict[f"{snp.snip}&{perm}"] = (0.0,"")
-    fold_dict = doMulti(pdict, constraint, f"{snp.name} filter", var_thr, var_dng)
+    fold_dict = doMulti(pdict, constraint, f"{snp.name} filter", var_thr, var_dng, var_nlp)
     for iRNA,ires in fold_dict.items():
         #print(ires[0])
         if ires[0] >= base_mfe*var_prc and ires[0] <= base_mfe*var_prx:
             filtered.append(iRNA.split("&")[1])
     return filtered
 
-def foldPermutations(perms1, perms2, base_mfe, constraint, var_udv, var_ldv, var_thr, var_dng):
+def foldPermutations(perms1, perms2, base_mfe, constraint, var_udv, var_ldv, var_thr, var_dng, var_nlp):
     ## create folds for all permutation combinations
     pdict = dict()
     for prm1 in perms1:
         for prm2 in perms2:
             pdict[f"{prm1}&{prm2}"] = 0.0
-    perm_dict = doMulti(pdict, constraint, "permutations", var_thr, var_dng)
+    perm_dict = doMulti(pdict, constraint, "permutations", var_thr, var_dng, var_nlp)
     fold_dict = dict()
     lower = var_ldv * base_mfe
     upper = var_udv * base_mfe
@@ -364,7 +367,7 @@ def foldPermutations(perms1, perms2, base_mfe, constraint, var_udv, var_ldv, var
         sys.exit()
     return fold_dict
 
-def doMulti(ldict, constraint, name, var_thr, var_dng):
+def doMulti(ldict, constraint, name, var_thr, var_dng, var_nlp):
     ## multi processing
     res_map = []
     res_items = Manager().dict()
@@ -381,7 +384,7 @@ def doMulti(ldict, constraint, name, var_thr, var_dng):
         for key in keylist[i:i+ldsplt]:
             lsdict[key] = ldict[key]
         ## make multi process function tuple
-        p = Process(target=multiFold, args=(lsdict, constraint, name, res_items, run_nr+1, var_dng))
+        p = Process(target=multiFold, args=(lsdict, constraint, name, res_items, run_nr+1, var_dng, var_nlp))
         res_map.append(p)
         p.start()
     for res in res_map:
@@ -390,9 +393,10 @@ def doMulti(ldict, constraint, name, var_thr, var_dng):
         fold_dict[iRNA] = ires
     return fold_dict
 
-def doCofold(RNA, constraint, var_dng):
+def doCofold(RNA, constraint, var_dng, var_nlp):
     ## do Cofold
     cvar.dangles = var_dng
+    cvar.noLP = int(var_nlp)
     fc = fold_compound(RNA)
     fc.constraints_add(constraint, CONSTRAINT_DB | CONSTRAINT_DB_DEFAULT)
     pattern, mfe = fc.mfe_dimer()
@@ -400,7 +404,7 @@ def doCofold(RNA, constraint, var_dng):
     pattern = pattern[:len(RNA.split("&")[0])]+"&"+pattern[len(RNA.split("&")[0]):]
     return mfe, pattern
 
-def multiFold(lsdict, constraint, name, res_items, run_nr, var_dng):
+def multiFold(lsdict, constraint, name, res_items, run_nr, var_dng, var_nlp):
     ## cofold multi
     #print(f"Status: Do {name} run {run_nr} ...             ")
     total, current = [len(lsdict.keys()), 0]
@@ -408,7 +412,7 @@ def multiFold(lsdict, constraint, name, res_items, run_nr, var_dng):
         percentage = (100/total)*current
         if int(percentage*10) % 100 == 0 and int(percentage) != 0:
             print(f"Status: {name} run {run_nr} ... {int(percentage)} %             ", end="\r")
-        mfe, pattern = doCofold(RNA, constraint, var_dng)
+        mfe, pattern = doCofold(RNA, constraint, var_dng, var_nlp)
         res_items[RNA] = (float(mfe),pattern)
         current += 1
     #if name[-6:] != "filter":
@@ -471,7 +475,7 @@ def aaSequence(RNA, frame, codon_table):
     aa_seq = "".join(codon_table[c] for c in codons)
     return aa_seq
 
-def getBest(folds, snip1, snip2, constraint, var_dng, var_mrg):
+def getBest(folds, snip1, snip2, constraint, var_dng, var_nlp, var_mrg):
     ## get best mutations
     worst_1 = -100.0
     worst_2 = -100.0
@@ -488,7 +492,7 @@ def getBest(folds, snip1, snip2, constraint, var_dng, var_mrg):
         mut2pos = [i+1+len(snip1.snip) for i in range(len(snip2.snip)) if snip2.snip[i] != iRNA2[i]]
         mutations = [[], mut1pos+mut2pos, mut2pos, mut1pos]
         for vRNA,vtype in zip(sequences,names):
-            mfe, pattern = doCofold(vRNA, constraint, var_dng)
+            mfe, pattern = doCofold(vRNA, constraint, var_dng, var_nlp)
             mfes.append(round(float(mfe),2))
             patterns.append(pattern)
         u_mean = ((mfes[2] + mfes[3]) / 2)*(1+var_mrg)
