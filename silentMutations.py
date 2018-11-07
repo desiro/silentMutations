@@ -586,6 +586,7 @@ def saveFolds(var_p, best, snip1, snip2, base_mfe, base_pattern, var_f, var_r, v
     ## save folds to file
     if not best:
         print("Error: No mutations found, try to adjust the parameters!")
+        print("Error: Try increasing the range of the -udv, -ldv and -mrg parameters.")
         sys.exit()
     file_name = f"{var_p}.cmut"
     with open(file_name, "w") as outfile:
