@@ -61,7 +61,8 @@ This project is licensed under the GNU General Public License v3.0 - see the [LI
 
 ## Reference
 
-Please cite [SilentMutations](https://doi.org/10.1101/424002) if you find our tool useful.
+Please cite [SilentMutations](https://www.sciencedirect.com/science/article/pii/S016817021830577X) if you find our tool useful.
+There is also an open access version at [biorxiv](https://doi.org/10.1101/424002).
 
 ## Workflow overview
 
