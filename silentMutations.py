@@ -639,9 +639,9 @@ if __name__ == "__main__":
     start_time = time.time()
     current_time = time.strftime('%x %X')
     scall = " ".join(sys.argv)
-    with open(f"{sscript}.log", "a") as calllog:
-        calllog.write(f"{sscript} started at {current_time}\n")
-        calllog.write(f"Call: {scall}\n")
+    #with open(f"{sscript}.log", "a") as calllog:
+    #    calllog.write(f"{sscript} started at {current_time}\n")
+    #    calllog.write(f"Call: {scall}\n")
     print(f"Call: {scall}")
     print(f"Status: Started at {current_time}")
     ############################################################################
