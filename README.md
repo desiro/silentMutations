@@ -8,6 +8,14 @@ This tool can automatically construct interrupting and restoring silent mutation
 * [numpy](http://www.numpy.org/)
 * [viennaRNA 2.4](https://www.tbi.univie.ac.at/RNA/documentation.html#install)
 
+### Conda Installation
+
+
+### Docker Installation
+
+
+### Unix Installation
+
 Installing the ViennaRNA package on Linux:
 ```
 tar -zxvf ViennaRNA-2.4.9.tar.gz
