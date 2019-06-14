@@ -11,12 +11,12 @@ RUN apt-get update && \
     apt-get upgrade -y && \
     apt-get install -y inkscape && \
     apt-get install -y default-jre && \
+    apt-get install -y default-jdk && \
     apt-get clean
 
 WORKDIR /home/sim/silentMutations
 ENV PATH=${PATH}:"/home/sim/silentMutations"
-ENV JAVA_HOME=${JAVA_HOME}:"/usr/lib/jvm/java-8-openjdk-amd64"
+ENV JAVA_HOME="/usr/lib/jvm/java-8-openjdk-amd64"
 ENV PATH=${PATH}:"${JAVA_HOME}/bin"
-
 
 USER sim
