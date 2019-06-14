@@ -14,6 +14,7 @@ RUN apt-get update && \
     apt-get clean
 
 WORKDIR /home/sim/silentMutations
-ENV PATH=${PATH}:"/home/sim/silentMutations"
+ENV PATH=${PATH}:"/home/sim/silentMutations/"
+ENV PATH=${PATH}:"/usr/lib/jvm/java-8-openjdk-amd64/jre/bin/"
 
 USER sim
