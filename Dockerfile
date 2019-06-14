@@ -10,7 +10,7 @@ RUN git clone https://github.com/desiro/silentMutations.git
 RUN apt-get update && \
     apt-get upgrade -y && \
     apt-get install -y inkscape && \
-    apt-get install -y oracle-java8-installer && \
+    apt-get install -y default-jre && \
     apt-get clean
 
 WORKDIR /home/sim/silentMutations
