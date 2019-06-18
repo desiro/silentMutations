@@ -9,14 +9,22 @@ RUN git clone https://github.com/desiro/silentMutations.git
 
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y inkscape && \
-    apt-get install -y default-jre && \
-    apt-get install -y default-jdk && \
+    apt-get install -y openjdk-8-jdk && \
+    apt-get install -y ant && \
     apt-get clean
+
+# Fix certificate issues
+RUN apt-get update && \
+    apt-get install ca-certificates-java && \
+    apt-get clean && \
+    update-ca-certificates -f;
+
+# Setup JAVA_HOME -- useful for docker commandline
+ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64/
+RUN export JAVA_HOME
 
 WORKDIR /home/sim/silentMutations
 ENV PATH=${PATH}:"/home/sim/silentMutations"
-ENV JAVA_HOME="/usr/lib/jvm/java-8-openjdk-amd64"
-ENV PATH=${PATH}:"${JAVA_HOME}/bin"
+ENV PATH=${PATH}:"/home/sim/silentMutations/VARNAv3-93.jar"
 
 USER sim
