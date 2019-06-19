@@ -11,4 +11,4 @@ RUN git clone https://github.com/desiro/silentMutations.git
 WORKDIR /home/sim/silentMutations
 ENV PATH=${PATH}:"/home/sim/silentMutations"
 
-USER sim
+#USER sim
