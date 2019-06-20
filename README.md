@@ -10,9 +10,21 @@ This tool can automatically construct interrupting and restoring silent mutation
 
 ### Conda Installation
 
+Installing everything with Conda:
+```
+conda install -c bioconda  viennarna=2.4.13
+conda install -c conda-forge numpy=1.16.4
+conda install -c lb_arrakistx varna=3.93
+git clone https://github.com/desiro/silentMutations.git 
+```
 
 ### Docker Installation
 
+Using Docker Hub:
+```
+docker run --user $(id -u):$(id -g) --rm -v <your working directory>:/source --workdir /source desiro/sim silentMutations.py -p example -f example.fa -s1 seq1:2:20-36 -s2 seq2:0:23-44 -cls ssRNA- -r -c -thr=4
+```
+* It is currently not possible to use VARNA within the Docker Hub repository due to some java issues.
 
 ### Unix Installation
 
