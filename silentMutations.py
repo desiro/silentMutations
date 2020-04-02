@@ -578,13 +578,15 @@ def createStructures(var_p, best, var_var, var_ink, var_cls):
 
 def makeDir(var_p):
     ## create directory
-    dir_name, dir_base = var_p, var_p
+    dir_path, dir_name = os.path.split(os.path.abspath(var_p))
+    if not dir_name: dir_name = "SIMout"
+    dir_base = dir_name
     i = 1
-    while os.path.isdir(dir_name):
+    while os.path.isdir(os.path.join(dir_path,dir_name)):
         dir_name = f"{dir_base}_{i}"
         i += 1
-    os.mkdir(dir_name)
-    return os.path.join(dir_name,var_p)
+    os.mkdir(os.path.join(dir_path,dir_name))
+    return os.path.join(dir_path,dir_name,dir_base)
 
 def saveFolds(var_p, best, snip1, snip2, base_mfe, base_pattern, var_f, var_r, var_c, var_cls, var_prc, var_prx, var_udv, var_ldv, var_mrg):
     ## save folds to file
