@@ -334,33 +334,36 @@ def getStats(snip, perm_strings, var_mut):
 
 def filterPermutations(snp, perms, constraint, base_mfe, var_prc, var_prx, var_thr, var_dng, var_nlp):
     ## filter permutations to be less than a percentage of the base mfe
-    pdict = dict()
+    pdict, perm_num = dict(), 0
     filtered = list()
     for perm in perms:
-        pdict[f"{snp.snip}&{perm}"] = (0.0,"")
+        pdict[perm_num] = f"{snp.snip}&{perm}"
+        perm_num += 1
     fold_dict = doMulti(pdict, constraint, f"{snp.name} filter", var_thr, var_dng, var_nlp)
-    for iRNA,ires in fold_dict.items():
+    for perm_num,mfe in fold_dict.items():
         #print(ires[0])
-        if ires[0] >= base_mfe*var_prc and ires[0] <= base_mfe*var_prx:
-            filtered.append(iRNA.split("&")[1])
+        if mfe >= base_mfe*var_prc and mfe <= base_mfe*var_prx:
+            filtered.append(pdict[perm_num].split("&")[1])
     return filtered
 
 def foldPermutations(perms1, perms2, base_mfe, constraint, var_udv, var_ldv, var_thr, var_dng, var_nlp):
     ## create folds for all permutation combinations
-    pdict = dict()
+    pdict, perm_num = dict(), 0
     for prm1 in perms1:
         for prm2 in perms2:
-            pdict[f"{prm1}&{prm2}"] = 0.0
+            pdict[perm_num] = f"{prm1}&{prm2}"
+            perm_num += 1
+    print(f"Status: Total folds: {len(pdict.keys())} ...")
     perm_dict = doMulti(pdict, constraint, "permutations", var_thr, var_dng, var_nlp)
     fold_dict = dict()
     lower = var_ldv * base_mfe
     upper = var_udv * base_mfe
     best = 0.0
-    for iRNA,ires in perm_dict.items():
-        if ires[0] < best:
-            best = ires[0]
-        if ires[0] >= upper and ires[0] <= lower:
-            fold_dict[iRNA] = ires[0]
+    for perm_num,mfe in perm_dict.items():
+        if mfe < best:
+            best = mfe
+        if mfe >= upper and mfe <= lower:
+            fold_dict[pdict[perm_num]] = mfe
     if len(fold_dict.keys()) == 0:
         print("Error: No mutations found, try to adjust the parameters!")
         print(f"Error: WT mfe is at {base_mfe:.2f} kcal/mol, while the best double-mutant was at {best:.2f} kcal/mol.")
@@ -389,8 +392,8 @@ def doMulti(ldict, constraint, name, var_thr, var_dng, var_nlp):
         p.start()
     for res in res_map:
         res.join()
-    for iRNA,ires in res_items.items():
-        fold_dict[iRNA] = ires
+    for perm_num,mfe in res_items.items():
+        fold_dict[perm_num] = mfe
     return fold_dict
 
 def doCofold(RNA, constraint, var_dng, var_nlp):
@@ -408,12 +411,11 @@ def multiFold(lsdict, constraint, name, res_items, run_nr, var_dng, var_nlp):
     ## cofold multi
     #print(f"Status: Do {name} run {run_nr} ...             ")
     total, current = [len(lsdict.keys()), 0]
-    for RNA in lsdict.keys():
-        percentage = (100/total)*current
-        if int(percentage*10) % 100 == 0 and int(percentage) != 0:
-            print(f"Status: {name} run {run_nr} ... {int(percentage)} %             ", end="\r")
+    for perm_num,RNA in lsdict.items():
+        if int(current*10000/total) % 10 == 0 and int(current*100/total) != 0:
+            print(f"Status: {name} run {run_nr} ... {current*100/total:>4.1f} %             ", end="\r")
         mfe, pattern = doCofold(RNA, constraint, var_dng, var_nlp)
-        res_items[RNA] = (float(mfe),pattern)
+        res_items[perm_num] = float(mfe)
         current += 1
     #if name[-6:] != "filter":
     #    print(f"Status: {name} run {run_nr} ... finished!             ")
