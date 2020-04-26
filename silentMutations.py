@@ -73,6 +73,11 @@ description
     define maximum number of allowed mutations per sequence, lower values will
     improve runtime (default: 5)
 
+--ignoreMutations,-imt
+    ignores all mutations that don't have at least one sequence with exactly the
+    maximum number allowed mutations, useful to reduce runtime with higher mutation
+    counts (default: False)
+
 --dangles,-dng
     use dangling ends for foldings (default: 0) (choices: 0,1,2,3)
 
@@ -98,29 +103,33 @@ import sys
 import os
 import re
 import time
-from numpy import arange, mean, prod, array
-import itertools
+from itertools import product
+from bisect import bisect_right, bisect_left
+from numpy import prod, array
+from subprocess import call
+from multiprocessing import Process, Manager
 try:
     from RNA import fold_compound, cvar, CONSTRAINT_DB, CONSTRAINT_DB_DEFAULT
 except:
     print("Error: The mandatory library ViennaRNA 2.4 is missing, please read the README.md for more information!")
     exit()
-from subprocess import Popen, PIPE, call
-from multiprocessing import Pool, Process, Manager, Lock
 
 
 ################################################################################
 ## main
 ################################################################################
 
-def main(var_p  , var_f  , var_s1 , var_s2 , var_c  , var_r  , var_cls, var_prc,
-         var_prx, var_udv, var_ldv, var_mrg, var_nc1, var_nc2, var_mut, var_dng,
-         var_nlp, var_thr, var_var, var_ink):
+def main(opt):
+    time_s = getTime()
+    ############################################################################
+    ## create output folder
+    print(f"Status: Create output directory ...")
+    opt = makeDir(**opt)
     ############################################################################
     ## read fasta file
     # fastaTest = "/home/vo54saz/projects/dd_influenza_packaging/scripts/codon_mut_test.fa"
     print(f"Status: Read fasta file ...")
-    data_dict = readFasta(var_f, var_s1, var_s2)
+    data_dict = readFasta(**opt)
     if len(data_dict.keys()) > 2:
         print("Error: More than two sequences in fasta file!")
         sys.exit()
@@ -129,9 +138,9 @@ def main(var_p  , var_f  , var_s1 , var_s2 , var_c  , var_r  , var_cls, var_prc,
     print(f"Status: Create snips ...")
     snip_list = list()
     for header,sequence in data_dict.items():
-        snip_list.append(createSnip(header, sequence, var_r, var_c))
+        snip_list.append(createSnip(header, sequence, **opt))
     snip1, snip2 = snip_list
-    getSnips(snip1, snip2, var_dng, var_nlp)
+    getSnips(snip1, snip2, **opt)
     if len(snip1.snip) > 30 or len(snip2.snip) > 30:
         print(f"Warning: One of your sequences is longer than 30 nts, consider stopping the run. -h will provide more information about this.")
     ############################################################################
@@ -139,28 +148,28 @@ def main(var_p  , var_f  , var_s1 , var_s2 , var_c  , var_r  , var_cls, var_prc,
     print(f"Status: Create permutations ...")
     perm_list, base_list = list(), list()
     slist = [snip1, snip2]
-    for sx,cdn in zip([0, 1],[var_nc1, var_nc2]):
+    for sx,cdn in zip([0, 1],[opt["var_nc1"], opt["var_nc2"]]):
         snip = slist[sx]
-        if var_nc1 and var_nc2:
-            perm_strings = getNCPermutations(slist, sx, var_dng, var_nlp)
+        if opt["var_nc1"] and opt["var_nc2"]:
+            perm_strings = getNCPermutations(slist, sx, **opt)
         else:
-            perm_strings = getPermutations(snip.snip, var_cls, cdn)
-        filtered_strings, mms_dict = getStats(snip.snip, perm_strings, var_mut)
+            perm_strings = getPermutations(snip.snip, cdn, **opt)
+        filtered_strings, mms_dict = getStats(snip.snip, perm_strings, **opt)
         perm_list.append(filtered_strings)
         base_list.append(perm_strings)
         mut_str = " ".join([f"{mu}={nu}" for mu,nu in sorted(mms_dict.items())])
         print(f"Status: {snip.name} mutations {mut_str}")
     print(f"Status: Permutations {snip1.name}:{len(base_list[0])} {snip2.name}:{len(base_list[1])}")
-    print(f"Status: Max {var_mut} mutations {snip1.name}:{len(perm_list[0])} {snip2.name}:{len(perm_list[1])}")
+    print(f"Status: Max {opt['var_mut']} mutations {snip1.name}:{len(perm_list[0])} {snip2.name}:{len(perm_list[1])}")
     ############################################################################
     ## filter permutations
     print(f"Status: Filter permutations ...")
     constraint = snip1.lconst+snip2.rconst
-    base_mfe, base_pattern = doCofold(f"{snip1.snip}&{snip2.snip}",constraint, var_dng, var_nlp)
+    base_mfe, base_pattern = doCofold(f"{snip1.snip}&{snip2.snip}",constraint, **opt)
     base_mfe = round(base_mfe,2)
     filtered_list = list()
     for snp,perms in zip([snip2, snip1], perm_list):
-        filtered_list.append(filterPermutations(snp, perms, constraint, float(base_mfe), var_prc, var_prx, var_thr, var_dng, var_nlp))
+        filtered_list.append(filterPermutations(snp, perms, constraint, float(base_mfe), **opt))
     if not filtered_list[0] or not filtered_list[1]:
         print("Error: Percentage for filtering too low!")
         sys.exit()
@@ -169,21 +178,20 @@ def main(var_p  , var_f  , var_s1 , var_s2 , var_c  , var_r  , var_cls, var_prc,
     ############################################################################
     ## make cofolds of permutations
     print(f"Status: Fold permutations ...")
-    folds = foldPermutations(filtered_list[0], filtered_list[1], float(base_mfe), constraint, var_udv, var_ldv, var_thr, var_dng, var_nlp)
+    folds = foldPermutations(filtered_list[0], filtered_list[1], float(base_mfe), constraint, snip1.snip, snip2.snip, **opt)
     print(f"Status: ... finished!                     ")
     ############################################################################
     ## get best mutation
     print(f"Status: Get best mutations ...")
-    best = getBest(folds, snip1, snip2, constraint, var_dng, var_nlp, var_mrg)
+    best = getBest(folds, snip1, snip2, constraint, **opt)
     ############################################################################
     ## save folds
     print(f"Status: Save folds ...")
-    var_p = makeDir(var_p)
-    saveFolds(var_p, best, snip1, snip2, base_mfe, base_pattern, var_f, var_r, var_c, var_cls, var_prc, var_prx, var_udv, var_ldv, var_mrg)
+    saveFolds(best, snip1, snip2, base_mfe, base_pattern, **opt)
     ############################################################################
     ## create varna plots
     print(f"Status: Create structures ...")
-    createStructures(var_p, best, var_var, var_ink, var_cls)
+    createStructures(best, **opt)
 
 
 
@@ -191,6 +199,27 @@ def main(var_p  , var_f  , var_s1 , var_s2 , var_c  , var_r  , var_cls, var_prc,
 ################################################################################
 ## functions
 ################################################################################
+
+def getTime(time_s=0, name=""):
+    if time_s and name:
+        time_e = time.time()-time_s
+        time_e = time.strftime("%H:%M:%S", time.gmtime(time_e))
+        time_c = time.strftime('%x %X')
+        print(f"Status: {name} finished at {time_c} in {time_e}")
+    return time.time()
+
+def makeDir(**opt):
+    ## create directory
+    dir_path, dir_name = os.path.split(os.path.abspath(opt["var_p"]))
+    if not dir_name: dir_name = "SIMout"
+    dir_base = dir_name
+    i = 1
+    while os.path.isdir(os.path.join(dir_path,dir_name)):
+        dir_name = f"{dir_base}_{i}"
+        i += 1
+    os.mkdir(os.path.join(dir_path,dir_name))
+    opt["var_p"] = os.path.join(dir_path,dir_name,dir_base)
+    return opt
 
 class RNAsnip(object):
     ## RNA object
@@ -226,9 +255,9 @@ class RNAsnip(object):
         self.lconst = self.lconst[:-3]
         self.rconst = self.rconst[:-3]
 
-def getSnips(RNA1, RNA2, var_dng, var_nlp):
+def getSnips(RNA1, RNA2, **opt):
     ## get minimum snip size for folding from 2 RNAsnip objects
-    mfe, pattern = doCofold(f"{RNA1.snip}&{RNA2.snip}",RNA1.lconst+RNA2.rconst, var_dng, var_nlp)
+    mfe, pattern = doCofold(f"{RNA1.snip}&{RNA2.snip}",RNA1.lconst+RNA2.rconst, **opt)
     pattern1, pattern2 = pattern.split("&")
     print(f"RNA: {RNA1.snip}&{RNA2.snip}")
     print(f"Pat: {pattern}")
@@ -247,19 +276,19 @@ def getSnips(RNA1, RNA2, var_dng, var_nlp):
         pattern2 = pattern2[:-3]
         RNA2.rcrop()
 
-def createSnip(header, sequence, var_r, var_c):
+def createSnip(header, sequence, **opt):
     ## extract snip position and create snips
     name, frame, srange = header.split(":")
     frame = int(frame)
     start, end = srange.split("-")
     start, end = int(start), int(end)
-    if var_r: 
+    if opt["var_r"]: 
         snip_range = (len(sequence)-end+1, len(sequence)-start+1)
         frame = (len(sequence)-frame) % 3
     else:
         snip_range = (start, end)
         frame = frame
-    vRNA = revComp(sequence, var_c, var_r)
+    vRNA = revComp(sequence, opt["var_r"], opt["var_c"])
     return RNAsnip(name, vRNA, frame, snip_range[0], snip_range[1])
 
 def permutate(RNA, frame, c_dict, a_dict):
@@ -270,10 +299,10 @@ def permutate(RNA, frame, c_dict, a_dict):
         codon_list.append(a_dict[aa])
     return codon_list
 
-def getNCPermutations(slist, sx, var_dng, var_nlp):
+def getNCPermutations(slist, sx, **opt):
     ## create non-coding permutations
     RNA1, RNA2 = slist
-    mfe, pattern = doCofold(f"{RNA1.snip}&{RNA2.snip}",RNA1.lconst+RNA2.rconst, var_dng, var_nlp)
+    mfe, pattern = doCofold(f"{RNA1.snip}&{RNA2.snip}",RNA1.lconst+RNA2.rconst, **opt)
     p_list = pattern.split("&")
     p1 = [i for i,pat in enumerate(p_list[0]) if pat != "."]
     p2 = [i for i,pat in enumerate(p_list[1]) if pat != "."]
@@ -293,17 +322,17 @@ def getNCPermutations(slist, sx, var_dng, var_nlp):
             j = pd_list[sx][i]
             codon_list.append([slnp[i],sother[j]])
     print(codon_list)
-    perm_list = list(itertools.product(*codon_list))
+    perm_list = list(product(*codon_list))
     perm_strings = list()
     for i,ptoup in enumerate(perm_list):
         #print(f"Status: Permutation: {i+1} of {nperm}      ", end="\r")
         perm_strings.append("".join(list(ptoup)))
     return perm_strings
 
-def getPermutations(snip, var_cls, cdn):
+def getPermutations(snip, cdn, **opt):
     ## create all possible permutation strings 
     co_dict, aa_dict, rc_dict, ra_dict = makeCodons()
-    if var_cls == "ssRNA-":
+    if opt["var_cls"] == "ssRNA-":
         c_dict = rc_dict
         a_dict = ra_dict
     else:
@@ -315,68 +344,83 @@ def getPermutations(snip, var_cls, cdn):
         codon_list = [["A","C","G","U"] for i in range(len(snip))]
     nperm = prod(array([len(sub) for sub in codon_list]))
     #print(codon_list)
-    perm_list = list(itertools.product(*codon_list))
+    perm_list = list(product(*codon_list))
     perm_strings = list()
     for i,ptoup in enumerate(perm_list):
         #print(f"Status: Permutation: {i+1} of {nperm}      ", end="\r")
         perm_strings.append("".join(list(ptoup)))
     return perm_strings
 
-def getStats(snip, perm_strings, var_mut):
+def getStats(snip, perm_strings, **opt):
     # filter to max mutations and get mutation stats
     filtered_strings, mms_dict = list(), dict()
     for ps in perm_strings:
         mms = sum(c1!=c2 for c1,c2 in zip(ps,snip))
         mms_dict[mms] = mms_dict.get(mms,0) + 1
-        if mms <= var_mut:
+        if mms <= opt["var_mut"]:
             filtered_strings.append(ps)
     return filtered_strings, mms_dict
 
-def filterPermutations(snp, perms, constraint, base_mfe, var_prc, var_prx, var_thr, var_dng, var_nlp):
+def filterPermutations(snp, perms, constraint, base_mfe, **opt):
     ## filter permutations to be less than a percentage of the base mfe
     pdict, perm_num = dict(), 0
     filtered = list()
     for perm in perms:
         pdict[perm_num] = f"{snp.snip}&{perm}"
         perm_num += 1
-    fold_dict = doMulti(pdict, constraint, f"{snp.name} filter", var_thr, var_dng, var_nlp)
+    fold_dict = doMulti(pdict, constraint, f"{snp.name} filter", base_mfe, **opt)
     for perm_num,mfe in fold_dict.items():
-        #print(ires[0])
-        if mfe >= base_mfe*var_prc and mfe <= base_mfe*var_prx:
-            filtered.append(pdict[perm_num].split("&")[1])
+        if mfe >= base_mfe*opt["var_prc"] and mfe <= base_mfe*opt["var_prx"]:
+            filtered.append((pdict[perm_num].split("&")[1], mfe))
+    filtered = sorted(filtered, key=lambda tup: tup[1])
     return filtered
 
-def foldPermutations(perms1, perms2, base_mfe, constraint, var_udv, var_ldv, var_thr, var_dng, var_nlp):
-    ## create folds for all permutation combinations
+def makeFoldList(perms1, perms2, snip1, snip2, **opt):
+    ## create folding list
     pdict, perm_num = dict(), 0
-    for prm1 in perms1:
-        for prm2 in perms2:
+    RNAs,prms = zip(*perms2)
+    tot = 0
+    for (prm1,mfe1) in perms1:
+        cut_low = mfe1 * (1 + opt["var_mrg"])
+        cut_high = mfe1 * (1 - opt["var_mrg"])
+        i,j = bisect_right(prms,cut_high), bisect_left(prms,cut_low)
+        for (prm2,mfe2) in perms2[j:i]:
+            tot += 1
+            if opt["var_imt"]:
+                ms1 = sum(c1!=c2 for c1,c2 in zip(prm1,snip1))
+                ms2 = sum(c1!=c2 for c1,c2 in zip(prm2,snip2))
+                if ms1 != opt["var_mut"] and ms2 != opt["var_mut"]:
+                    continue
             pdict[perm_num] = f"{prm1}&{prm2}"
             perm_num += 1
+            print(f"Status: Perm num: {perm_num}             ", end="\r")
+    return pdict, perm_num
+
+def foldPermutations(perms1, perms2, base_mfe, constraint, snip1, snip2, **opt):
+    ## create folds for all permutation combinations
+    pdict, perm_num = makeFoldList(perms1, perms2, snip1, snip2, **opt)
     print(f"Status: Total folds: {len(pdict.keys())} ...")
-    perm_dict = doMulti(pdict, constraint, "permutations", var_thr, var_dng, var_nlp)
+    perm_dict = doMulti(pdict, constraint, "Permutations", base_mfe, **opt)
     fold_dict = dict()
-    lower = var_ldv * base_mfe
-    upper = var_udv * base_mfe
     best = 0.0
     for perm_num,mfe in perm_dict.items():
-        if mfe < best:
-            best = mfe
-        if mfe >= upper and mfe <= lower:
+        if isinstance(perm_num,int):
             fold_dict[pdict[perm_num]] = mfe
+        else:
+            if mfe < best: best = mfe
     if len(fold_dict.keys()) == 0:
         print("Error: No mutations found, try to adjust the parameters!")
         print(f"Error: WT mfe is at {base_mfe:.2f} kcal/mol, while the best double-mutant was at {best:.2f} kcal/mol.")
         sys.exit()
     return fold_dict
 
-def doMulti(ldict, constraint, name, var_thr, var_dng, var_nlp):
+def doMulti(ldict, constraint, name, base_mfe, **opt):
     ## multi processing
     res_map = []
     res_items = Manager().dict()
     fold_dict = dict()
-    if len(ldict) > var_thr:
-        ldsplt = int(len(ldict)/var_thr)
+    if len(ldict) > opt["var_thr"]:
+        ldsplt = int(len(ldict)/opt["var_thr"])
     else:
         ldsplt = int(len(ldict))
     keylist = list(ldict.keys())
@@ -387,7 +431,7 @@ def doMulti(ldict, constraint, name, var_thr, var_dng, var_nlp):
         for key in keylist[i:i+ldsplt]:
             lsdict[key] = ldict[key]
         ## make multi process function tuple
-        p = Process(target=multiFold, args=(lsdict, constraint, name, res_items, run_nr+1, var_dng, var_nlp))
+        p = Process(target=multiFold, args=(lsdict, constraint, name, res_items, run_nr+1, base_mfe, opt))
         res_map.append(p)
         p.start()
     for res in res_map:
@@ -396,29 +440,37 @@ def doMulti(ldict, constraint, name, var_thr, var_dng, var_nlp):
         fold_dict[perm_num] = mfe
     return fold_dict
 
-def doCofold(RNA, constraint, var_dng, var_nlp):
+def multiFold(lsdict, constraint, name, res_items, run_nr, base_mfe, opt):
+    ## cofold multi
+    #print(f"Status: Do {name} run {run_nr} ...             ")
+    lower = opt["var_ldv"] * base_mfe
+    upper = opt["var_udv"] * base_mfe
+    best = 0.0
+    total, current = [len(lsdict.keys()), 0]
+    for perm_num,RNA in lsdict.items():
+        if int(current*10000/total) % 10 == 0 and int(current*100/total) != 0:
+            print(f"Status: {name} run {run_nr:>2} ... {current*100/total:>4.1f} %             ", end="\r")
+        current += 1
+        mfe, pattern = doCofold(RNA, constraint, **opt)
+        if name == "permutations":
+            if mfe < best: best = mfe
+            if mfe >= upper and mfe <= lower:
+                res_items[perm_num] = float(mfe)
+        else:
+            res_items[perm_num] = float(mfe)
+    if name == "permutations":
+        res_items[f"best_{run_nr}"] = best
+
+def doCofold(RNA, constraint, **opt):
     ## do Cofold
-    cvar.dangles = var_dng
-    cvar.noLP = int(var_nlp)
+    cvar.dangles = opt["var_dng"]
+    cvar.noLP = int(opt["var_nlp"])
     fc = fold_compound(RNA)
     fc.constraints_add(constraint, CONSTRAINT_DB | CONSTRAINT_DB_DEFAULT)
     pattern, mfe = fc.mfe_dimer()
     ## get pattern
     pattern = pattern[:len(RNA.split("&")[0])]+"&"+pattern[len(RNA.split("&")[0]):]
     return mfe, pattern
-
-def multiFold(lsdict, constraint, name, res_items, run_nr, var_dng, var_nlp):
-    ## cofold multi
-    #print(f"Status: Do {name} run {run_nr} ...             ")
-    total, current = [len(lsdict.keys()), 0]
-    for perm_num,RNA in lsdict.items():
-        if int(current*10000/total) % 10 == 0 and int(current*100/total) != 0:
-            print(f"Status: {name} run {run_nr} ... {current*100/total:>4.1f} %             ", end="\r")
-        mfe, pattern = doCofold(RNA, constraint, var_dng, var_nlp)
-        res_items[perm_num] = float(mfe)
-        current += 1
-    #if name[-6:] != "filter":
-    #    print(f"Status: {name} run {run_nr} ... finished!             ")
 
 def extractRNA(RNA, frame, start, end):
     ## extract RNA snip at the correct frame
@@ -455,7 +507,7 @@ def makeCodons():
         aa_dict[aa] = aa_list
     return co_dict, aa_dict, rc_dict, ra_dict
 
-def revComp(RNA, var_c, var_r):
+def revComp(RNA, var_r, var_c):
     ## complement dictionary, or transform DNA to RNA
     RNA = RNA.upper()
     D2Rc = {"A":"U","T":"A","U":"A","C":"G","G":"C","R":"Y","Y":"R","M":"K",\
@@ -477,7 +529,7 @@ def aaSequence(RNA, frame, codon_table):
     aa_seq = "".join(codon_table[c] for c in codons)
     return aa_seq
 
-def getBest(folds, snip1, snip2, constraint, var_dng, var_nlp, var_mrg):
+def getBest(folds, snip1, snip2, constraint, **opt):
     ## get best mutations
     worst_1 = -100.0
     worst_2 = -100.0
@@ -494,11 +546,11 @@ def getBest(folds, snip1, snip2, constraint, var_dng, var_nlp, var_mrg):
         mut2pos = [i+1+len(snip1.snip) for i in range(len(snip2.snip)) if snip2.snip[i] != iRNA2[i]]
         mutations = [[], mut1pos+mut2pos, mut2pos, mut1pos]
         for vRNA,vtype in zip(sequences,names):
-            mfe, pattern = doCofold(vRNA, constraint, var_dng, var_nlp)
+            mfe, pattern = doCofold(vRNA, constraint, **opt)
             mfes.append(round(float(mfe),2))
             patterns.append(pattern)
-        u_mean = ((mfes[2] + mfes[3]) / 2)*(1+var_mrg)
-        l_mean = ((mfes[2] + mfes[3]) / 2)*(1-var_mrg)
+        u_mean = ((mfes[2] + mfes[3]) / 2)*(1+opt["var_mrg"])
+        l_mean = ((mfes[2] + mfes[3]) / 2)*(1-opt["var_mrg"])
         if u_mean <= mfes[2] <= l_mean and u_mean <= mfes[3] <= l_mean and \
            (mfes[2] + mfes[3] > worst_1 + worst_2 or \
            (mfes[2] + mfes[3] == worst_1 + worst_2 and len(mutations[1]) < len(best[4][1]))):
@@ -506,13 +558,13 @@ def getBest(folds, snip1, snip2, constraint, var_dng, var_nlp, var_mrg):
             worst_1, worst_2 = mfes[2], mfes[3]
     return best #(sequences, names, mfes, patterns, mutations)
 
-def readFasta(fasta_in, var_s1, var_s2):
+def readFasta(**opt):
     ## read fasta file
     data_dict = dict()
     vRNA = ""
     name = ""
     entry = 0
-    with open(fasta_in, "r") as infa:
+    with open(opt["var_f"], "r") as infa:
         for line in infa:
             line = line.strip()
             if re.match(">",line):
@@ -520,48 +572,48 @@ def readFasta(fasta_in, var_s1, var_s2):
                 if entry > 2:
                     break
                 if vRNA:
-                    data_dict[var_s1] = vRNA
+                    data_dict[opt["var_s1"]] = vRNA
                 name = line[1:]
                 vRNA = ""
             else:
                 vRNA += line
-        data_dict[var_s2] = vRNA
+        data_dict[opt["var_s2"]] = vRNA
     return data_dict
 
-def doVARNA(var_p, RNA, constraint, var_var, title_name, hstring, astring, ystring, pstring, period, algorithm):
+def doVARNA(file_name, RNA, constraint, title_name, hstring, astring, ystring, pstring, period, algorithm, **opt):
     ## calls VARNA
-    C_call=["java", "-cp", var_var, "fr.orsay.lri.varna.applications.VARNAcmd",
-            "-sequenceDBN", RNA, "-structureDBN", constraint, "-o", f"{var_p}.svg",
+    C_call=["java", "-cp", opt["var_var"], "fr.orsay.lri.varna.applications.VARNAcmd",
+            "-sequenceDBN", RNA, "-structureDBN", constraint, "-o", f"{file_name}.svg",
             "-algorithm", algorithm, "-periodNum", f"{period}",
             "-spaceBetweenBases", "0.72", "-title", title_name,
             "-highlightRegion" , hstring, "-annotations", astring,
             "-backbone", "#000000", "-bp", "#000000", "-bpStyle", "-lw"]
     if pstring: C_call+=["-basesStyle1", ystring, "-applyBasesStyle1on", pstring,]
-    if var_var:
+    if opt["var_var"]:
         call(C_call, shell=False)
-    with open(f"{var_p}.sh", "w") as cvar:
-        if not var_var:
+    with open(f"{file_name}.sh", "w") as cvar:
+        if not opt["var_var"]:
             C_call[2] = "VARNAv3-93.jar"
         cvar.write(" ".join(C_call))
-    print(f"Status: VARNA call written to \"{var_p}.sh\"")
+    print(f"Status: VARNA call written to \"{file_name}.sh\"")
 
-def svg2pdf(var_p, var_ink):
+def svg2pdf(file_name, **opt):
     ## calls VARNA
-    C_call=[var_ink, "-D", f"{var_p}.svg", "--without-gui", f"--export-pdf={var_p}.pdf"]
+    C_call=[opt["var_ink"], "-D", f"{file_name}.svg", "--without-gui", f"--export-pdf={file_name}.pdf"]
     call(C_call, shell=False)
 
-def createStructures(var_p, best, var_var, var_ink, var_cls):
+def createStructures(best, **opt):
     ## create 2. Structures with varna
     #           dgreen     magenta    yellow      pink       dyellow    lblue      red        lgrey      dgrey
     #crange = ["#0c7226", "#c64fea", "#ffee00", "#ea104e", "#ffb600", "#00edff", "#ff0000", "#babbbc", "#616263"]
     ## get proteins
     co_dict, aa_dict, rc_dict, ra_dict = makeCodons()
-    if var_cls == "ssRNA-": c_dict = rc_dict
+    if opt["var_cls"] == "ssRNA-": c_dict = rc_dict
     else: c_dict = co_dict
     for vRNA,vtype,bmfe,bpattern,bmut in zip(*best):
         Rlen = len(vRNA)-1
         hstring, pstring = "",""
-        file_name = f"{var_p}_{vtype}"
+        file_name = f"{opt['var_p']}_{vtype}"
         title_name = f"{vtype} ({round(bmfe,2)} kcal/mol)"
         astring = f"5':type=B,anchor=1;3':type=B,anchor={Rlen};"
         aa_seq = aaSequence(vRNA.replace("&",""), 0, c_dict)
@@ -574,35 +626,23 @@ def createStructures(var_p, best, var_var, var_ink, var_cls):
         ## highlight mutations
         ystring = "fill=#ff0000,outline=#ff0000,label=#ffffff"
         if bmut: pstring += ",".join([str(x) for x in bmut])
-        doVARNA(file_name, vRNA, bpattern, var_var, title_name, hstring, astring, ystring, pstring, 10, "naview")
-        if var_var and var_ink:
-            svg2pdf(file_name, var_ink)
+        doVARNA(file_name, vRNA, bpattern, title_name, hstring, astring, ystring, pstring, 10, "naview", **opt)
+        if opt["var_var"] and opt["var_ink"]:
+            svg2pdf(file_name, opt["var_ink"])
 
-def makeDir(var_p):
-    ## create directory
-    dir_path, dir_name = os.path.split(os.path.abspath(var_p))
-    if not dir_name: dir_name = "SIMout"
-    dir_base = dir_name
-    i = 1
-    while os.path.isdir(os.path.join(dir_path,dir_name)):
-        dir_name = f"{dir_base}_{i}"
-        i += 1
-    os.mkdir(os.path.join(dir_path,dir_name))
-    return os.path.join(dir_path,dir_name,dir_base)
-
-def saveFolds(var_p, best, snip1, snip2, base_mfe, base_pattern, var_f, var_r, var_c, var_cls, var_prc, var_prx, var_udv, var_ldv, var_mrg):
+def saveFolds(best, snip1, snip2, base_mfe, base_pattern, **opt):
     ## save folds to file
     if not best:
         print("Error: No mutations found, try to adjust the parameters!")
         print("Error: Try increasing the range of the -udv, -ldv and -mrg parameters.")
         sys.exit()
-    file_name = f"{var_p}.cmut"
+    file_name = f"{opt['var_p']}.cmut"
     with open(file_name, "w") as outfile:
         co_dict, aa_dict, rc_dict, ra_dict = makeCodons()
-        outfile.write(f"Settings: -f {var_f} -r {var_r} -c {var_c} -cls {var_cls} -prc {var_prc} -prx {var_prx} -udv {var_udv} -ldv {var_ldv} -mrg {var_mrg}\n")
-        if var_cls == "ssRNA-": 
-            outfile.write(f"Positive snip 1:   {snip1.name} {len(snip1.seq)-int(snip1.s_end)+1}-{len(snip1.seq)-int(snip1.s_start)+1} {revComp(snip1.snip,1,1)} {aaSequence(revComp(snip1.snip,1,1),0,co_dict)}\n")
-            outfile.write(f"Positive snip 2:   {snip2.name} {len(snip2.seq)-int(snip2.s_end)+1}-{len(snip2.seq)-int(snip2.s_start)+1} {revComp(snip2.snip,1,1)} {aaSequence(revComp(snip2.snip,1,1),0,co_dict)}\n")
+        outfile.write(f"Settings: -f {opt['var_f']} -r {opt['var_r']} -c {opt['var_c']} -cls {opt['var_cls']} -prc {opt['var_prc']} -prx {opt['var_prx']} -udv {opt['var_udv']} -ldv {opt['var_ldv']} -mrg {opt['var_mrg']}\n")
+        if opt["var_cls"] == "ssRNA-": 
+            outfile.write(f"Positive snip 1:   {snip1.name} {len(snip1.seq)-int(snip1.s_end)+1}-{len(snip1.seq)-int(snip1.s_start)+1} {revComp(snip1.snip,True,True)} {aaSequence(revComp(snip1.snip,True,True),0,co_dict)}\n")
+            outfile.write(f"Positive snip 2:   {snip2.name} {len(snip2.seq)-int(snip2.s_end)+1}-{len(snip2.seq)-int(snip2.s_start)+1} {revComp(snip2.snip,True,True)} {aaSequence(revComp(snip2.snip,True,True),0,co_dict)}\n")
             c_dict = rc_dict
             sniptype = "Negative"
         else:
@@ -618,14 +658,14 @@ def saveFolds(var_p, best, snip1, snip2, base_mfe, base_pattern, var_f, var_r, v
             outfile.write(f"{vtype}: {vRNA}\n")
             outfile.write(f"{vtype}: {bpattern} {round(bmfe,2)} kcal/mol\n")
         # get aa sequences
-        if var_cls == "ssRNA-":
+        if opt["var_cls"] == "ssRNA-":
             c_dict = rc_dict
         else:
             c_dict = co_dict
         best_iRNA1, best_iRNA2 = best[0][1].split("&")
         best_name1, best_name2 = best[1][1].split("x")
         for vRNA,vtype in zip([best_iRNA1,best_iRNA2],[best_name1,best_name2]):
-            outfile.write(f"Positive {vtype} aa: {revComp(vRNA,1,1)} {aaSequence(vRNA,0,c_dict)[::-1]}\n")
+            outfile.write(f"Positive {vtype} aa: {revComp(vRNA,True,True)} {aaSequence(vRNA,0,c_dict)[::-1]}\n")
             outfile.write(f"Negative {vtype} aa: {vRNA} {aaSequence(vRNA,0,c_dict)}\n")
 
 
@@ -644,8 +684,9 @@ if __name__ == "__main__":
     current_time = time.strftime('%x %X')
     scall = " ".join(sys.argv)
     #with open(f"{sscript}.log", "a") as calllog:
-    #    calllog.write(f"{sscript} started at {current_time}\n")
-    #    calllog.write(f"Call: {scall}\n")
+    #    calllog.write(f"Start : {current_time}\n")
+    #    calllog.write(f"Script: {sscript}\n")
+    #    calllog.write(f"Call  : {scall}\n")
     print(f"Call: {scall}")
     print(f"Status: Started at {current_time}")
     ############################################################################
@@ -727,7 +768,7 @@ if __name__ == "__main__":
     ############################################################################
     ## call main function
     try:
-        main(**opt)
+        main(opt)
     except KeyboardInterrupt:
         print("Error: Interrupted by user!")
         sys.exit()
