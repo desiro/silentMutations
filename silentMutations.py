@@ -452,13 +452,13 @@ def multiFold(lsdict, constraint, name, res_items, run_nr, base_mfe, opt):
             print(f"Status: {name} run {run_nr:>2} ... {current*100/total:>4.1f} %             ", end="\r")
         current += 1
         mfe, pattern = doCofold(RNA, constraint, **opt)
-        if name == "permutations":
+        if name == "Permutations":
             if mfe < best: best = mfe
             if mfe >= upper and mfe <= lower:
                 res_items[perm_num] = float(mfe)
         else:
             res_items[perm_num] = float(mfe)
-    if name == "permutations":
+    if name == "Permutations":
         res_items[f"best_{run_nr}"] = best
 
 def doCofold(RNA, constraint, **opt):
@@ -658,15 +658,15 @@ def saveFolds(best, snip1, snip2, base_mfe, base_pattern, **opt):
             outfile.write(f"{vtype}: {vRNA}\n")
             outfile.write(f"{vtype}: {bpattern} {round(bmfe,2)} kcal/mol\n")
         # get aa sequences
-        if opt["var_cls"] == "ssRNA-":
-            c_dict = rc_dict
-        else:
-            c_dict = co_dict
         best_iRNA1, best_iRNA2 = best[0][1].split("&")
         best_name1, best_name2 = best[1][1].split("x")
         for vRNA,vtype in zip([best_iRNA1,best_iRNA2],[best_name1,best_name2]):
-            outfile.write(f"Positive {vtype} aa: {revComp(vRNA,True,True)} {aaSequence(vRNA,0,c_dict)[::-1]}\n")
-            outfile.write(f"Negative {vtype} aa: {vRNA} {aaSequence(vRNA,0,c_dict)}\n")
+            if opt["var_cls"] == "ssRNA-":
+                outfile.write(f"Positive {vtype} aa: {revComp(vRNA,True,True)} {aaSequence(vRNA,0,rc_dict)[::-1]}\n")
+                outfile.write(f"Negative {vtype} aa: {revComp(vRNA,False,False)} {aaSequence(vRNA,0,rc_dict)}\n")
+            else:
+                outfile.write(f"Positive {vtype} aa: {revComp(vRNA,False,False)} {aaSequence(vRNA,0,co_dict)[::-1]}\n")
+                outfile.write(f"Negative {vtype} aa: {revComp(vRNA,True,True)} {aaSequence(vRNA,0,co_dict)}\n")
 
 
 
