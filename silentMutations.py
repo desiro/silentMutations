@@ -78,6 +78,12 @@ description
     maximum number allowed mutations, useful to reduce runtime with higher mutation
     counts (default: False)
 
+--prioMut1,-pm1
+    prioritize to minimize first mutant sequence (default: False)
+
+--prioMut2,-pm2
+    prioritize to minimize second mutant sequence (default: False)
+
 --dangles,-dng
     use dangling ends for foldings (default: 0) (choices: 0,1,2,3)
 
@@ -183,7 +189,7 @@ def main(opt):
     ############################################################################
     ## get best mutation
     print(f"Status: Get best mutations ...")
-    best = getBest(folds, snip1, snip2, constraint, **opt)
+    best = getBest(folds, snip1, snip2, constraint, base_mfe, **opt)
     ############################################################################
     ## save folds
     print(f"Status: Save folds ...")
@@ -239,7 +245,9 @@ class RNAsnip(object):
     def extractRNA(self):
         sshift = (self.start-1-self.frame)%3
         eshift = 2-(self.end-1-self.frame)%3
-        self.s_start, self.s_end = [self.start-sshift,self.end+eshift]
+        self.s_start, self.s_end = self.start-sshift, self.end+eshift
+        if self.s_start <= 0: self.s_start += 3
+        if self.s_end > len(self.seq): self.s_end -= 3
         self.snip = self.seq[self.s_start-1:self.s_end]
         self.lconst = "<"*len(self.snip)
         self.rconst = ">"*len(self.snip)
@@ -372,6 +380,14 @@ def filterPermutations(snp, perms, constraint, base_mfe, **opt):
     for perm_num,mfe in fold_dict.items():
         if mfe >= base_mfe*opt["var_prc"] and mfe <= base_mfe*opt["var_prx"]:
             filtered.append((pdict[perm_num].split("&")[1], mfe))
+    if not filtered and (opt["var_pm1"] or opt["var_pm2"]):
+        prc = opt["var_prc"]
+        while not filtered:
+            prc += 0.01
+            for perm_num,mfe in fold_dict.items():
+                if mfe >= base_mfe*prc and mfe <= base_mfe*opt["var_prx"]:
+                    filtered.append((pdict[perm_num].split("&")[1], mfe))
+        print(f"Status: Set {prc:.2f} as new -prc value ...")
     filtered = sorted(filtered, key=lambda tup: tup[1])
     return filtered
 
@@ -394,6 +410,9 @@ def makeFoldList(perms1, perms2, snip1, snip2, **opt):
             pdict[perm_num] = f"{prm1}&{prm2}"
             perm_num += 1
             print(f"Status: Perm num: {perm_num}             ", end="\r")
+    if not pdict:
+        print("Error: Empty fold list, try to adjust the -mrg parameter!")
+        sys.exit()
     return pdict, perm_num
 
 def foldPermutations(perms1, perms2, base_mfe, constraint, snip1, snip2, **opt):
@@ -529,7 +548,7 @@ def aaSequence(RNA, frame, codon_table):
     aa_seq = "".join(codon_table[c] for c in codons)
     return aa_seq
 
-def getBest(folds, snip1, snip2, constraint, **opt):
+def getBest(folds, snip1, snip2, constraint, base_mfe, **opt):
     ## get best mutations
     worst_1 = -100.0
     worst_2 = -100.0
@@ -541,22 +560,32 @@ def getBest(folds, snip1, snip2, constraint, **opt):
         names =     [f"{snip1.name}_WTx{snip2.name}_WT",  f"{snip1.name}_mutx{snip2.name}_mut",
                      f"{snip1.name}_WTx{snip2.name}_mut", f"{snip1.name}_mutx{snip2.name}_WT"]
         mfes = []
-        patterns = []
-        mut1pos = [i+1 for i in range(len(snip1.snip)) if snip1.snip[i] != iRNA1[i]]
-        mut2pos = [i+1+len(snip1.snip) for i in range(len(snip2.snip)) if snip2.snip[i] != iRNA2[i]]
-        mutations = [[], mut1pos+mut2pos, mut2pos, mut1pos]
-        for vRNA,vtype in zip(sequences,names):
-            mfe, pattern = doCofold(vRNA, constraint, **opt)
+        for i,(vRNA,vtype) in enumerate(zip(sequences,names)):
+            if i == 0: mfe = base_mfe
+            elif i == 1: mfe = imfe
+            else: mfe, pattern = doCofold(vRNA, constraint, **opt)
             mfes.append(round(float(mfe),2))
-            patterns.append(pattern)
-        u_mean = ((mfes[2] + mfes[3]) / 2)*(1+opt["var_mrg"])
-        l_mean = ((mfes[2] + mfes[3]) / 2)*(1-opt["var_mrg"])
-        if u_mean <= mfes[2] <= l_mean and u_mean <= mfes[3] <= l_mean and \
-           (mfes[2] + mfes[3] > worst_1 + worst_2 or \
-           (mfes[2] + mfes[3] == worst_1 + worst_2 and len(mutations[1]) < len(best[4][1]))):
-            best = (sequences, names, mfes, patterns, mutations)
-            worst_1, worst_2 = mfes[2], mfes[3]
-    return best #(sequences, names, mfes, patterns, mutations)
+        if (opt["var_pm1"] and mfes[3] >= worst_2) or (opt["var_pm2"] and mfes[2] >= worst_1) or\
+           (not opt["var_pm1"] and not opt["var_pm2"] and mfes[2] + mfes[3] >= worst_1 + worst_2):
+            u_mean = ((mfes[2] + mfes[3]) / 2)*(1+opt["var_mrg"])
+            l_mean = ((mfes[2] + mfes[3]) / 2)*(1-opt["var_mrg"])
+            if opt["var_pm1"] or opt["var_pm2"] or (u_mean <= mfes[2] <= l_mean and u_mean <= mfes[3] <= l_mean):
+                mut1pos = [i+1 for i in range(len(snip1.snip)) if snip1.snip[i] != iRNA1[i]]
+                mut2pos = [i+1+len(snip1.snip) for i in range(len(snip2.snip)) if snip2.snip[i] != iRNA2[i]]
+                mutations = [[], mut1pos+mut2pos, mut2pos, mut1pos]
+                if (opt["var_pm1"] and mfes[3] == worst_2) or (opt["var_pm2"] and mfes[2] == worst_1) or\
+                   (not opt["var_pm1"] and not opt["var_pm2"] and mfes[2] + mfes[3] == worst_1 + worst_2):
+                    if len(mutations[1]) >= len(best[3][1]):
+                        continue
+                best = (sequences, names, mfes, mutations)
+                worst_1, worst_2 = mfes[2], mfes[3]
+    ## add patterns
+    patterns = []
+    for i,(vRNA,vtype) in enumerate(zip(best[0],best[1])):
+        mfe, pattern = doCofold(vRNA, constraint, **opt)
+        patterns.append(pattern)
+    result = (best[0], best[1], best[2], patterns, best[3])
+    return result #(sequences, names, mfes, patterns, mutations)
 
 def readFasta(**opt):
     ## read fasta file
