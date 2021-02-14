@@ -84,6 +84,9 @@ description
 --prioMut2,-pm2
     prioritize to minimize second mutant sequence (default: False)
 
+--stabilize,-stb
+    stabilze interaction instead of destabilization (default: False)
+
 --dangles,-dng
     use dangling ends for foldings (default: 0) (choices: 0,1,2,3)
 
@@ -565,8 +568,10 @@ def getBest(folds, snip1, snip2, constraint, base_mfe, **opt):
             elif i == 1: mfe = imfe
             else: mfe, pattern = doCofold(vRNA, constraint, **opt)
             mfes.append(round(float(mfe),2))
-        if (opt["var_pm1"] and mfes[3] >= worst_2) or (opt["var_pm2"] and mfes[2] >= worst_1) or\
-           (not opt["var_pm1"] and not opt["var_pm2"] and mfes[2] + mfes[3] >= worst_1 + worst_2):
+        if (not opt["var_stb"] and ((opt["var_pm1"] and mfes[3] >= worst_2) or (opt["var_pm2"] and mfes[2] >= worst_1) or\
+           (not opt["var_pm1"] and not opt["var_pm2"] and mfes[2] + mfes[3] >= worst_1 + worst_2))) or\
+           (    opt["var_stb"] and ((opt["var_pm1"] and mfes[3] =< worst_2) or (opt["var_pm2"] and mfes[2] =< worst_1) or\
+           (not opt["var_pm1"] and not opt["var_pm2"] and mfes[2] + mfes[3] =< worst_1 + worst_2))):
             u_mean = ((mfes[2] + mfes[3]) / 2)*(1+opt["var_mrg"])
             l_mean = ((mfes[2] + mfes[3]) / 2)*(1-opt["var_mrg"])
             if opt["var_pm1"] or opt["var_pm2"] or (u_mean <= mfes[2] <= l_mean and u_mean <= mfes[3] <= l_mean):
