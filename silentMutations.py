@@ -554,8 +554,12 @@ def aaSequence(RNA, frame, codon_table):
 
 def getBest(folds, snip1, snip2, constraint, base_mfe, **opt):
     ## get best mutations
-    worst_1 = -100.0
-    worst_2 = -100.0
+    if opt["var_stb"]:
+        worst_1 = 0.0
+        worst_2 = 0.0
+    else:
+        worst_1 = -100.0
+        worst_2 = -100.0
     best = ()
     for iRNA,imfe in folds.items():
         iRNA1, iRNA2 = iRNA.split("&")
