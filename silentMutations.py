@@ -274,18 +274,19 @@ def getSnips(RNA1, RNA2, **opt):
     print(f"Pat: {pattern}")
     print(f"mfe: {mfe:.2f} kcal/mol")
     #print(pattern1)
-    while pattern1[:3] == "...":
-        pattern1 = pattern1[3:]
-        RNA1.lcrop()
-    while pattern1[-3:] == "...":
-        pattern1 = pattern1[:-3]
-        RNA1.rcrop()
-    while pattern2[:3] == "...":
-        pattern2 = pattern2[3:]
-        RNA2.lcrop()
-    while pattern2[-3:] == "...":
-        pattern2 = pattern2[:-3]
-        RNA2.rcrop()
+    if not opt["var_stb"]:
+        while pattern1[:3] == "...":
+            pattern1 = pattern1[3:]
+            RNA1.lcrop()
+        while pattern1[-3:] == "...":
+            pattern1 = pattern1[:-3]
+            RNA1.rcrop()
+        while pattern2[:3] == "...":
+            pattern2 = pattern2[3:]
+            RNA2.lcrop()
+        while pattern2[-3:] == "...":
+            pattern2 = pattern2[:-3]
+            RNA2.rcrop()
 
 def createSnip(header, sequence, **opt):
     ## extract snip position and create snips
