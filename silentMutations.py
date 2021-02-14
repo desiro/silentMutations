@@ -381,9 +381,14 @@ def filterPermutations(snp, perms, constraint, base_mfe, **opt):
         pdict[perm_num] = f"{snp.snip}&{perm}"
         perm_num += 1
     fold_dict = doMulti(pdict, constraint, f"{snp.name} filter", base_mfe, **opt)
+    mmax, mmin = 0.0, -999.0
     for perm_num,mfe in fold_dict.items():
+        #print(base_mfe*opt["var_prc"],mfe,base_mfe*opt["var_prx"])
+        if mmax >= mfe: mmax = mfe
+        if mmin <= mfe: mmin = mfe
         if mfe >= base_mfe*opt["var_prc"] and mfe <= base_mfe*opt["var_prx"]:
             filtered.append((pdict[perm_num].split("&")[1], mfe))
+    print(f"Status: {snp.name} percentage min: {mmax:.2f}, max: {mmin:.2f}, prc: {base_mfe*opt['var_prc']:.2f}, prx: {base_mfe*opt['var_prx']:.2f} ...")
     if not filtered and (opt["var_pm1"] or opt["var_pm2"]):
         prc = opt["var_prc"]
         while not filtered:
