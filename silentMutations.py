@@ -7,7 +7,7 @@ usage
     <name>:<frame>:<start>-<end> -s2 <name>:<frame>:<start>-<end> [options]
 
 version
-    silentMutations.py 0.0.1 (alpha)
+    silentMutations.py 0.0.2 (alpha)
 
 dependencies
     numpy, ViennaRNA Package 2.4, VARNAv3-93.jar, inkscape
