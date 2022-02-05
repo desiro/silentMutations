@@ -1,8 +1,8 @@
 
 # <samp>SilentMutations</samp>
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-teal.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![Python v3.9.7](https://img.shields.io/badge/Language-Python_3.6-darkred.svg)](https://www.python.org/downloads/release/python-397/)
-[![Conda v4.11.0](https://img.shields.io/badge/Uses-conda-green.svg)](https://docs.conda.io/en/latest/miniconda.html)
+[![Python v3.9.7](https://img.shields.io/badge/Language-Python_v3.9.7-blue.svg)](https://www.python.org/downloads/release/python-397/)
+[![Conda v4.11.0](https://img.shields.io/badge/Uses-Conda-green.svg)](https://docs.conda.io/en/latest/miniconda.html)
 
 ***
 
@@ -14,21 +14,20 @@ This tool can automatically construct interrupting and restoring silent mutation
 
 ## Mandatory Prerequisites
 
-* [Python v3.9.7](https://www.python.org/downloads/release/python-365/)
-* [NumPy](http://www.numpy.org/)
-* [viennaRNA 2.4.18](https://www.tbi.univie.ac.at/RNA/documentation.html#install)
+* [![Python v3.9.7](https://img.shields.io/badge/Language-Python_v3.9.7-blue.svg)](https://www.python.org/downloads/release/python-397/)
+* [NumPy v1.22.2](http://www.numpy.org/)
+* [viennaRNA v2.4.18](https://www.tbi.univie.ac.at/RNA/documentation.html#install)
 
 ## Optional Prerequisites
 
-* [Conda v4.11.0]
-* [VARNA 3.93](http://varna.lri.fr/)
-* [Inkscape 0.92](https://inkscape.org/en/)
+* [![Conda v4.11.0](https://img.shields.io/badge/Conda-v4.11.0-bc4fd5.svg)](https://docs.conda.io/en/latest/miniconda.html)
+* [![VARNA v3.93](https://img.shields.io/badge/VARNA-v3.93-ffba27.svg)](https://docs.conda.io/en/latest/miniconda.html) [VARNA v3.93](http://varna.lri.fr/)
 
 ***
 
 ### Conda Installation
 
-To use <samp>SilentMutations</samp>, I recommend using Miniconda and following the steps below.
+To run <samp>SilentMutations</samp>, I recommend using Miniconda and following the steps below.
 
 Installing Miniconda:
 ```
@@ -69,7 +68,7 @@ make
 sudo make install
 ```
 
-For Windows 10 users, please use the [Ubuntu](https://www.microsoft.com/en-us/p/ubuntu/9nblggh4msv6?cid=msft_web_chart) subsystem and follow the Linux installation steps. 
+For Windows 10 users, please use the [Ubuntu 20.04 LTS](https://www.microsoft.com/en-us/p/ubuntu-2004-lts/9n6svws3rx71?cid=msft_web_chart) subsystem and follow the Linux installation steps. 
 
 ***
 
