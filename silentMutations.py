@@ -7,10 +7,10 @@ usage
     <name>:<frame>:<start>-<end> -s2 <name>:<frame>:<start>-<end> [options]
 
 version
-    silentMutations.py 0.0.2 (alpha)
+    silentMutations.py 1.0.0
 
 dependencies
-    numpy, ViennaRNA Package 2.4, VARNAv3-93.jar, inkscape
+    Python v3.9.7, NumPy v1.22.2, ViennaRNA 2.4.18, VARNA v3.93
 
 description
     Generates compensatory codon mutations with similar minimum free energy. It
@@ -99,11 +99,8 @@ description
 --varnabin,-var
     use this VARNA binary; example: VARNAv3-93.jar (default: )
 
---inkscbin,-ink
-    use this Inkscape binary; example: inkscape (default: )
-
 reference
-    Reference.
+    https://doi.org/10.1016/j.virusres.2018.11.005
 """
 
 
@@ -641,10 +638,10 @@ def doVARNA(file_name, RNA, constraint, title_name, hstring, astring, ystring, p
         cvar.write(" ".join(C_call))
     print(f"Status: VARNA call written to \"{file_name}.sh\"")
 
-def svg2pdf(file_name, **opt):
-    ## calls VARNA
-    C_call=[opt["var_ink"], "-D", f"{file_name}.svg", "--without-gui", f"--export-pdf={file_name}.pdf"]
-    call(C_call, shell=False)
+#def svg2pdf(file_name, **opt):
+#    ## calls VARNA
+#    C_call=[opt["var_ink"], "-D", f"{file_name}.svg", "--without-gui", f"--export-pdf={file_name}.pdf"]
+#    call(C_call, shell=False)
 
 def createStructures(best, **opt):
     ## create 2. Structures with varna
@@ -671,8 +668,8 @@ def createStructures(best, **opt):
         ystring = "fill=#ff0000,outline=#ff0000,label=#ffffff"
         if bmut: pstring += ",".join([str(x) for x in bmut])
         doVARNA(file_name, vRNA, bpattern, title_name, hstring, astring, ystring, pstring, 10, "naview", **opt)
-        if opt["var_var"] and opt["var_ink"]:
-            svg2pdf(file_name, opt["var_ink"])
+        #if opt["var_var"] and opt["var_ink"]:
+        #    svg2pdf(file_name, opt["var_ink"])
 
 def saveFolds(best, snip1, snip2, base_mfe, base_pattern, **opt):
     ## save folds to file

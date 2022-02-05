@@ -1,6 +1,8 @@
 
-## <samp>SilentMutations</samp>
-[![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-teal.svg)](https://www.gnu.org/licenses/gpl-3.0)![Python3.6](https://img.shields.io/badge/Language-Python_3.6-darkred.svg)
+# <samp>SilentMutations</samp>
+[![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-teal.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![Python v3.9.7](https://img.shields.io/badge/Language-Python_3.6-darkred.svg)](https://www.python.org/downloads/release/python-397/)
+[![Conda v4.11.0](https://img.shields.io/badge/Uses-conda-green.svg)](https://docs.conda.io/en/latest/miniconda.html)
 
 ***
 
@@ -12,12 +14,13 @@ This tool can automatically construct interrupting and restoring silent mutation
 
 ## Mandatory Prerequisites
 
-* [python 3.6](https://www.python.org/downloads/release/python-365/)
-* [numpy](http://www.numpy.org/)
-* [viennaRNA 2.4](https://www.tbi.univie.ac.at/RNA/documentation.html#install)
+* [Python v3.9.7](https://www.python.org/downloads/release/python-365/)
+* [NumPy](http://www.numpy.org/)
+* [viennaRNA 2.4.18](https://www.tbi.univie.ac.at/RNA/documentation.html#install)
 
 ## Optional Prerequisites
 
+* [Conda v4.11.0]
 * [VARNA 3.93](http://varna.lri.fr/)
 * [Inkscape 0.92](https://inkscape.org/en/)
 
@@ -25,15 +28,28 @@ This tool can automatically construct interrupting and restoring silent mutation
 
 ### Conda Installation
 
-Installing everything with Conda:
+To use <samp>SilentMutations</samp>, I recommend using Miniconda and following the steps below.
+
+Installing Miniconda:
 ```
-conda install -c bioconda  viennarna=2.4.13
-conda install -c conda-forge numpy=1.16.4
-conda install -c lb_arrakistx varna=3.93
-git clone https://github.com/desiro/silentMutations.git 
+wget https://repo.anaconda.com/miniconda/Miniconda3-py39_4.10.3-Linux-x86_64.sh
+bash Miniconda3-latest-Linux-x86_64.sh
+conda update conda
+conda update python
 ```
 
-### Other Installation
+Installing Conda packages:
+```
+conda create --name silentMutations python=3.9.7
+conda activate silentMutations
+conda install -c bioconda viennarna=2.4.18
+conda install -c conda-forge numpy=1.22.2
+conda install -c lb_arrakistx varna=3.93
+git clone https://github.com/desiro/silentMutations.git
+cd silentMutations
+```
+
+### Other Installations
 
 Installing the ViennaRNA package on Linux:
 ```
@@ -67,13 +83,17 @@ The basic input for ```silentMutations.py``` includes the following parameters:
   
 ### Basic Example
 ```
-python3 silentMutations.py -p example -f example.fa -s1 seq1:2:20-36 -s2 seq2:0:23-44 -cls ssRNA- -r -c -thr=4
+python silentMutations.py -p example -f example.fa -s1 seq1:2:20-36 -s2 seq2:0:23-44 -cls ssRNA- -r -c -thr=4
 ```
 
-### Example with VARNA and Inkscape
+### Example with VARNA
 ```
-python3 silentMutations.py -p example -f example.fa -s1 seq1:2:20-36 -s2 seq2:0:23-44 -cls ssRNA- -r -c -thr=4 -var VARNAv3-93.jar -ink inkscape
+python silentMutations.py -p example -f example.fa -s1 seq1:2:20-36 -s2 seq2:0:23-44 -cls ssRNA- -r -c -thr=4 -var VARNAv3-93.jar
 ```
+
+### Options
+
+For more command line options, see the [manual](https://github.com/desiro/vRNAsite/blob/master/manual.md).
 
 ***
 
@@ -87,5 +107,11 @@ This project is licensed under the GNU General Public License v3.0 - see the [LI
 
 ## Reference
 
-Please cite [SilentMutations](https://www.sciencedirect.com/science/article/pii/S016817021830577X) if you find our tool useful.
+Please cite [<samp>SilentMutations</samp>](https://www.sciencedirect.com/science/article/pii/S016817021830577X) if you find our tool useful:
+```
+D. Desirò, M. Hölzer, B. Ibrahim and M. Marz.
+"SilentMutations (SIM): A tool for analyzing long-range RNA–RNA interactions in viral genomes and structured RNAs."
+Virus Research, 260:135-141, 2019.
+```
+
 There is also an open access version at [bioRxiv](https://doi.org/10.1101/424002).
