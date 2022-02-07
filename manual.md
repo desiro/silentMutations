@@ -13,7 +13,7 @@ silentMutations.py 1.0.0
 ```
 
 ## Dependencies
-```Python v3.9.7```, ```NumPy v1.22.2```, ```ViennaRNA v2.4.18```, ```VARNA v3.93```
+```Python v3.9.7```, ```NumPy v1.22.2```, ```ViennaRNA v2.5.0```, ```VARNA v3.93```
 
 ## Description
 <samp>SilentMutations</samp> generates compensatory codon mutations with similar minimum free energy. It is recommended to not extend the length for each sequence over 30 nt. This could lead to extensive run times and each sequence would probably form intra sequence interactions prior to their interaction with each other. This is not covered with SIM. Example call: python3 silentMutations.py -p example -f example.fa -s1 seq1:2:20-36 -s2 seq2:0:23-44 -cls ssRNA- -r -c -thr=4

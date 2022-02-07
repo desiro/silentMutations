@@ -1,8 +1,8 @@
 
 # <samp>SilentMutations</samp>
-[![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-teal.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![Python v3.9.7](https://img.shields.io/badge/Language-Python_v3.9.7-blue.svg)](https://www.python.org/downloads/release/python-397/)
-[![Conda v4.11.0](https://img.shields.io/badge/Uses-Conda-green.svg)](https://docs.conda.io/en/latest/miniconda.html)
+[![License: GPL v3](https://img.shields.io/badge/License-GPL_v3-bd0000.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![Python v3.9.7](https://img.shields.io/badge/Language-Python_v3-75a8d3.svg)](https://www.python.org/downloads/release/python-397/)
+[![Conda v4.11.0](https://img.shields.io/badge/Uses-Conda-43b02a.svg)](https://docs.conda.io/en/latest/miniconda.html)
 
 ***
 
@@ -14,9 +14,9 @@ This tool can automatically construct interrupting and restoring silent mutation
 
 ## Mandatory Prerequisites
 
-* [![Python v3.9.7](https://img.shields.io/badge/Language-Python_v3.9.7-blue.svg)](https://www.python.org/downloads/release/python-397/)
-* [NumPy v1.22.2](http://www.numpy.org/)
-* [viennaRNA v2.4.18](https://www.tbi.univie.ac.at/RNA/documentation.html#install)
+* [![Python v3.9.7](https://img.shields.io/badge/Python_v3.9.7-75a8d3.svg)](https://www.python.org/downloads/release/python-397/)
+* [![NumPy v1.22.2](https://img.shields.io/badge/NumPy-v1.22.2-013243.svg)](http://www.numpy.org/)
+* [![ViennaRNA v2.4.18](https://img.shields.io/badge/ViennaRNA-v2.5.0-006795.svg)](https://www.tbi.univie.ac.at/RNA/)
 
 ## Optional Prerequisites
 
@@ -35,13 +35,16 @@ wget https://repo.anaconda.com/miniconda/Miniconda3-py39_4.10.3-Linux-x86_64.sh
 bash Miniconda3-latest-Linux-x86_64.sh
 conda update conda
 conda update python
+conda config --add channels defaults
+conda config --add channels bioconda
+conda config --add channels conda-forge
 ```
 
 Installing Conda packages:
 ```
 conda create --name silentMutations python=3.9.7
 conda activate silentMutations
-conda install -c bioconda viennarna=2.4.18
+conda install -c bioconda viennarna=2.5.0
 conda install -c conda-forge numpy=1.22.2
 conda install -c lb_arrakistx varna=3.93
 git clone https://github.com/desiro/silentMutations.git
@@ -92,7 +95,7 @@ python silentMutations.py -p example -f example.fa -s1 seq1:2:20-36 -s2 seq2:0:2
 
 ### Options
 
-For more command line options, see the [manual](https://github.com/desiro/vRNAsite/blob/master/manual.md).
+For more command line options, see the [manual](https://github.com/desiro/silentMutations/blob/master/manual.md).
 
 ***
 
