@@ -33,6 +33,7 @@ Installing Miniconda:
 ```
 wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 bash Miniconda3-latest-Linux-x86_64.sh
+bash
 conda update conda
 conda update python
 conda config --add channels defaults
