@@ -21,7 +21,7 @@ This tool can automatically construct interrupting and restoring silent mutation
 ## Optional Prerequisites
 
 * [![Conda v4.11.0](https://img.shields.io/badge/Conda_v4.11.0-43b02a.svg)](https://docs.conda.io/en/latest/miniconda.html)
-* [![VARNA v3.93](https://img.shields.io/badge/VARNA_v3.93-ffba27.svg)](https://docs.conda.io/en/latest/miniconda.html)
+* [![VARNA v3.93](https://img.shields.io/badge/VARNA_v3.93-ffba27.svg)](http://varna.lri.fr/)
 
 ***
 
