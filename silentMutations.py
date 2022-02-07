@@ -17,8 +17,10 @@ description
     is recommended to not extend the length for each sequence over 30 nt. This
     could lead to extensive run times and each sequence would probably form
     intra sequence interactions prior to their interaction with each other. This
-    is not covered with SIM. Example call: python3 silentMutations.py -p example
+    is not covered with SIM. Example call: python silentMutations.py -p example
     -f example.fa -s1 seq1:2:20-36 -s2 seq2:0:23-44 -cls ssRNA- -r -c -thr=4
+
+################################################################
 
 --prefix,-p
     output prefix for result files

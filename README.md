@@ -16,7 +16,7 @@ This tool can automatically construct interrupting and restoring silent mutation
 
 * [![Python v3.9.7](https://img.shields.io/badge/Python_v3.9.7-75a8d3.svg)](https://www.python.org/downloads/release/python-397/)
 * [![NumPy v1.22.2](https://img.shields.io/badge/NumPy_v1.22.2-013243.svg)](http://www.numpy.org/)
-* [![ViennaRNA v2.4.18](https://img.shields.io/badge/ViennaRNA_v2.5.0-006795.svg)](https://www.tbi.univie.ac.at/RNA/)
+* [![ViennaRNA v2.5.0](https://img.shields.io/badge/ViennaRNA_v2.5.0-006795.svg)](https://www.tbi.univie.ac.at/RNA/)
 
 ## Optional Prerequisites
 
@@ -31,7 +31,7 @@ To run <samp>SilentMutations</samp>, I recommend using Miniconda and following t
 
 Installing Miniconda:
 ```
-wget https://repo.anaconda.com/miniconda/Miniconda3-py39_4.10.3-Linux-x86_64.sh
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 bash Miniconda3-latest-Linux-x86_64.sh
 conda update conda
 conda update python
@@ -55,8 +55,8 @@ cd silentMutations
 
 Installing the ViennaRNA package on Linux:
 ```
-tar -zxvf ViennaRNA-2.4.9.tar.gz
-cd ViennaRNA-2.4.9
+tar -zxvf ViennaRNA-2.5.0.tar.gz
+cd ViennaRNA-2.5.0
 ./configure --with-python3
 make
 sudo make install
@@ -64,8 +64,8 @@ sudo make install
 
 Installing the ViennaRNA package on MAC:
 ```
-tar -zxvf ViennaRNA-2.4.9.tar.gz
-cd ViennaRNA-2.4.9
+tar -zxvf ViennaRNA-2.5.0.tar.gz
+cd ViennaRNA-2.5.0
 ./configure --enable-universal-binary --with-python3
 make
 sudo make install
