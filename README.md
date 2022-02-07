@@ -15,13 +15,13 @@ This tool can automatically construct interrupting and restoring silent mutation
 ## Mandatory Prerequisites
 
 * [![Python v3.9.7](https://img.shields.io/badge/Python_v3.9.7-75a8d3.svg)](https://www.python.org/downloads/release/python-397/)
-* [![NumPy v1.22.2](https://img.shields.io/badge/NumPy-v1.22.2-013243.svg)](http://www.numpy.org/)
-* [![ViennaRNA v2.4.18](https://img.shields.io/badge/ViennaRNA-v2.5.0-006795.svg)](https://www.tbi.univie.ac.at/RNA/)
+* [![NumPy v1.22.2](https://img.shields.io/badge/NumPy_v1.22.2-013243.svg)](http://www.numpy.org/)
+* [![ViennaRNA v2.4.18](https://img.shields.io/badge/ViennaRNA_v2.5.0-006795.svg)](https://www.tbi.univie.ac.at/RNA/)
 
 ## Optional Prerequisites
 
-* [![Conda v4.11.0](https://img.shields.io/badge/Conda-v4.11.0-43b02a.svg)](https://docs.conda.io/en/latest/miniconda.html)
-* [![VARNA v3.93](https://img.shields.io/badge/VARNA-v3.93-ffba27.svg)](https://docs.conda.io/en/latest/miniconda.html)
+* [![Conda v4.11.0](https://img.shields.io/badge/Conda_v4.11.0-43b02a.svg)](https://docs.conda.io/en/latest/miniconda.html)
+* [![VARNA v3.93](https://img.shields.io/badge/VARNA_v3.93-ffba27.svg)](https://docs.conda.io/en/latest/miniconda.html)
 
 ***
 
