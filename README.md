@@ -1,5 +1,4 @@
-
-# <span style="color:black">[<samp>silentMutations</samp>](https://github.com/desiro/silentMutations)</span>
+# [<samp>silentMutations</samp>](https://github.com/desiro/silentMutations)
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPL_v3-bd0000.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Python v3.9.7](https://img.shields.io/badge/Language-Python_v3-75a8d3.svg)](https://www.python.org/)
