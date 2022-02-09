@@ -16,10 +16,9 @@ silentMutations.py 1.0.0
 ```Python v3.9.7```, ```NumPy v1.22.2```, ```ViennaRNA v2.5.0```, ```VARNA v3.93```
 
 ## Description
-<samp>SilentMutations</samp> generates compensatory codon mutations with similar minimum free energy. It is recommended to not extend the length for each sequence over 30 nt. This could lead to extensive run times and each sequence would probably form intra sequence interactions prior to their interaction with each other. This is not covered with SIM. Example call: python3 silentMutations.py -p example -f example.fa -s1 seq1:2:20-36 -s2 seq2:0:23-44 -cls ssRNA- -r -c -thr=4
+<samp>SilentMutations</samp> generates compensatory codon mutations with similar minimum free energy. It is recommended to not extend the length for each sequence over 30 nt. This could lead to extensive run times and each sequence would probably form intra sequence interactions prior to their interaction with each other. This is not covered with SIM. Example call: python3 silentMutations.py -p example -f example.fa -s1 seq1:2:20-36 -s2 seq2:0:23-44 -cls ssRNA- -r -c -thr 4
 
 ## Options
-
 ```
 --prefix,-p
     output prefix for result files
@@ -101,7 +100,14 @@ silentMutations.py 1.0.0
 
 --inkscbin,-ink
     use this Inkscape binary; example: inkscape (default: )
-
-reference
-    https://doi.org/10.1016/j.virusres.2018.11.005
 ```
+
+## References
+```
+D. Desirò, M. Hölzer, B. Ibrahim and M. Marz.
+"SilentMutations (SIM): A tool for analyzing long-range RNA–RNA interactions in viral genomes and structured RNAs."
+Virus Research, 260:135-141, 2019.
+https://github.com/desiro/silentMutations
+https://doi.org/10.1016/j.virusres.2018.11.005
+```
+

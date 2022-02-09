@@ -101,7 +101,13 @@ description
 --varnabin,-var
     use this VARNA binary; example: VARNAv3-93.jar (default: )
 
+################################################################
+
 reference
+    D. Desirò, M. Hölzer, B. Ibrahim and M. Marz.
+    "SilentMutations (SIM): A tool for analyzing long-range RNA–RNA interactions in viral genomes and structured RNAs."
+    Virus Research, 260:135-141, 2019.
+    https://github.com/desiro/silentMutations
     https://doi.org/10.1016/j.virusres.2018.11.005
 """
 

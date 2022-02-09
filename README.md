@@ -1,5 +1,5 @@
 
-# <samp>SilentMutations</samp>
+# [<samp>silentMutations</samp>](https://github.com/desiro/silentMutations)
 [![License: GPL v3](https://img.shields.io/badge/License-GPL_v3-bd0000.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Python v3.9.7](https://img.shields.io/badge/Language-Python_v3-75a8d3.svg)](https://www.python.org/)
 [![Conda v4.11.0](https://img.shields.io/badge/Uses-Conda-43b02a.svg)](https://docs.conda.io/en/latest/miniconda.html)
@@ -27,13 +27,16 @@ This tool can automatically construct interrupting and restoring silent mutation
 
 ### Conda Installation
 
-To run <samp>SilentMutations</samp>, I recommend using Miniconda and following the steps below.
+To run <samp>silentMutations</samp>, I recommend using Miniconda and following the steps below. If this is the first time using conda, you should probably restart your shell after the installation of Miniconda. The following will demonstrate the installation and set up of Miniconda on Linux, which should be similar on other platforms. More information can be found on the [Miniconda](https://docs.conda.io/en/latest/miniconda.html) and [Bioconda](https://bioconda.github.io/user/install.html) pages.
 
 Installing Miniconda:
 ```
 wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 bash Miniconda3-latest-Linux-x86_64.sh
-bash
+```
+
+Installing Bioconda:
+```
 conda update conda
 conda update python
 conda config --add channels defaults
@@ -52,7 +55,7 @@ git clone https://github.com/desiro/silentMutations.git
 cd silentMutations
 ```
 
-### Other Installations
+### Installation without Conda
 
 Installing the ViennaRNA package on Linux:
 ```
@@ -72,7 +75,7 @@ make
 sudo make install
 ```
 
-For Windows 10 users, please use the [Ubuntu 20.04 LTS](https://www.microsoft.com/en-us/p/ubuntu-2004-lts/9n6svws3rx71?cid=msft_web_chart) subsystem and follow the Linux installation steps. 
+For Windows 10 users, please use the [Ubuntu 20.04 LTS](https://www.microsoft.com/en-us/p/ubuntu-2004-lts/9n6svws3rx71?cid=msft_web_chart) subsystem and follow the Linux installation steps.
 
 ***
 
