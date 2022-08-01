@@ -714,8 +714,8 @@ def saveFolds(best, snip1, snip2, base_mfe, base_pattern, **opt):
                 outfile.write(f"Positive {vtype} aa: {revComp(vRNA,True,True)} {aaSequence(vRNA,0,rc_dict)[::-1]}\n")
                 outfile.write(f"Negative {vtype} aa: {revComp(vRNA,False,False)} {aaSequence(vRNA,0,rc_dict)}\n")
             else:
-                outfile.write(f"Positive {vtype} aa: {revComp(vRNA,False,False)} {aaSequence(vRNA,0,co_dict)[::-1]}\n")
-                outfile.write(f"Negative {vtype} aa: {revComp(vRNA,True,True)} {aaSequence(vRNA,0,co_dict)}\n")
+                outfile.write(f"Positive {vtype} aa: {revComp(vRNA,False,False)} {aaSequence(vRNA,0,co_dict)}\n")
+                outfile.write(f"Negative {vtype} aa: {revComp(vRNA,True,True)} {aaSequence(vRNA,0,co_dict)[::-1]}\n")
 
 
 
