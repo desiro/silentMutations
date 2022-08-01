@@ -84,6 +84,10 @@ The basic input for ```silentMutations.py``` includes the following parameters:
 * ```-f``` - input fasta file, will only read the first two sequences
 * ```-s1 <name>:<frame>:<start>-<end>``` - for the first sequence
 * ```-s2 <name>:<frame>:<start>-<end>``` - for the second sequence
+
+```<name>``` is an arbitrary name for the sequence that will appear in the results  
+```<frame>``` is the frame shift of the coding sequence with respect to the genome reading frame (Frame 1: ```0```; Frame 2: ```1```; Frame 3: ```2```)  
+```<start>-<end>``` are the nucleotide positions to be included in the predictions (```3-5``` of ```AGCUA``` would be ```CUA```)  
   
 ### Basic Example
 ```
